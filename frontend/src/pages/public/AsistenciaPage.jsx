@@ -76,8 +76,20 @@ function FormularioAsistencia({ formulario }) {
 
   useEffect(() => {
     listarGrados().then(setGrados).catch(() => {});
-    listarSecciones().then(setSecciones).catch(() => {});
     solicitarUbicacion();
+  }, []);
+
+  const cargarSecciones = useCallback(async (gradoId) => {
+    if (gradoId) {
+      try {
+        const data = await listarSecciones({ grado_id: gradoId });
+        setSecciones(data);
+      } catch {
+        setSecciones([]);
+      }
+    } else {
+      setSecciones([]);
+    }
   }, []);
 
   const cargarEstudiantes = useCallback(async (gradoId, seccionId) => {
@@ -96,15 +108,19 @@ function FormularioAsistencia({ formulario }) {
   const handleGradoChange = (e) => {
     const val = e.target.value;
     setGradoId(val);
+    setSeccionId('');
     setEstudianteId('');
-    cargarEstudiantes(val, seccionId);
+    setSecciones([]);
+    setEstudiantes([]);
+    if (val) cargarSecciones(val);
   };
 
   const handleSeccionChange = (e) => {
     const val = e.target.value;
     setSeccionId(val);
     setEstudianteId('');
-    cargarEstudiantes(gradoId, val);
+    setEstudiantes([]);
+    if (gradoId && val) cargarEstudiantes(gradoId, val);
   };
 
   const handleSubmit = async (e) => {
@@ -113,6 +129,11 @@ function FormularioAsistencia({ formulario }) {
 
     if (!gradoId || !seccionId || !estudianteId) {
       setErrorMsg('Por favor, completa todos los campos.');
+      return;
+    }
+
+    if (!ubicacion) {
+      setErrorMsg('Debes proporcionar tu ubicación para registrar la asistencia.');
       return;
     }
 
@@ -192,16 +213,16 @@ function FormularioAsistencia({ formulario }) {
 
         <div className="form-group">
           <label className="form-label">Sección</label>
-          <select className="form-input" value={seccionId} onChange={handleSeccionChange} required>
-            <option value="">Seleccionar sección</option>
+          <select className="form-input" value={seccionId} onChange={handleSeccionChange} required disabled={!gradoId}>
+            <option value="">{gradoId ? 'Seleccionar sección' : 'Primero selecciona un grado'}</option>
             {secciones.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
           </select>
         </div>
 
         <div className="form-group">
           <label className="form-label">Nombre del Estudiante</label>
-          <select className="form-input" value={estudianteId} onChange={(e) => setEstudianteId(e.target.value)} required>
-            <option value="">Seleccionar estudiante</option>
+          <select className="form-input" value={estudianteId} onChange={(e) => setEstudianteId(e.target.value)} required disabled={!gradoId || !seccionId}>
+            <option value="">{gradoId && seccionId ? 'Seleccionar estudiante' : 'Primero selecciona grado y sección'}</option>
             {estudiantes.map((e) => <option key={e.id} value={e.id}>{e.nombre_completo}</option>)}
           </select>
         </div>

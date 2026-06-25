@@ -4,9 +4,9 @@ const { validate } = require('../middleware/validate');
 const { authenticate, authorize } = require('../middleware/auth');
 const controller = require('../controllers/seccionController');
 
-router.use(authenticate);
-
 router.get('/', controller.listar);
+
+router.use(authenticate);
 router.post('/', authorize('administrador'), [
   body('nombre').notEmpty().withMessage('El nombre es requerido'),
   validate

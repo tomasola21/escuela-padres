@@ -7,10 +7,10 @@ const controller = require('../controllers/estudianteController');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.use(authenticate);
-
 router.get('/', controller.listar);
 router.get('/:id', controller.obtener);
+
+router.use(authenticate);
 router.post('/', authorize('administrador'), [
   body('codigo').notEmpty().withMessage('El código es requerido'),
   body('nombre_completo').notEmpty().withMessage('El nombre completo es requerido'),

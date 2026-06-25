@@ -19,7 +19,15 @@ const sembrarSecciones = async () => {
 const listar = async (req, res) => {
   try {
     await sembrarSecciones();
-    const [secciones] = await pool.query('SELECT * FROM secciones ORDER BY nombre ASC');
+    const { grado_id } = req.query;
+    let query = 'SELECT * FROM secciones';
+    const params = [];
+    if (grado_id) {
+      query = `SELECT DISTINCT s.* FROM secciones s JOIN estudiantes e ON e.seccion_id = s.id WHERE e.grado_id = ?`;
+      params.push(grado_id);
+    }
+    query += ' ORDER BY nombre ASC';
+    const [secciones] = await pool.query(query, params);
     res.json(secciones);
   } catch (error) {
     console.error('Error al listar secciones:', error);
