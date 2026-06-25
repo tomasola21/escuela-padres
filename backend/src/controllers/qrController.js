@@ -3,15 +3,7 @@ const QRCode = require('qrcode');
 const crypto = require('crypto');
 require('dotenv').config();
 
-const PRESETS = {
-  clasico: { nombre: 'Clásico', dark: '#1a365d', light: '#ffffff' },
-  moderno: { nombre: 'Moderno', dark: '#2b6cb0', light: '#ebf8ff' },
-  redondeado: { nombre: 'Redondeado', dark: '#22543d', light: '#f0fff4' },
-  colorido: { nombre: 'Colorido', dark: '#6b46c1', light: '#faf5ff' },
-  minimal: { nombre: 'Minimal', dark: '#1a202c', light: '#ffffff' }
-};
-
-const CONFIG_POR_DEFECTO = { preset: 'clasico', dark: '#1a365d', light: '#ffffff', width: 400 };
+const CONFIG_POR_DEFECTO = { dark: '#1a365d', light: '#ffffff', width: 400 };
 
 const listar = async (req, res) => {
   try {
@@ -82,58 +74,18 @@ const toggleActivo = async (req, res) => {
   }
 };
 
-const obtenerPresets = async (req, res) => {
-  res.json(PRESETS);
-};
-
-const actualizarConfig = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { preset, dark, light, width } = req.body;
-
-    const [qrs] = await pool.query('SELECT * FROM qrs WHERE id = ?', [id]);
-    if (qrs.length === 0) {
-      return res.status(404).json({ mensaje: 'QR no encontrado.' });
-    }
-
-    const config = {
-      preset: preset || 'clasico',
-      dark: dark || PRESETS[preset]?.dark || CONFIG_POR_DEFECTO.dark,
-      light: light || PRESETS[preset]?.light || CONFIG_POR_DEFECTO.light,
-      width: width || CONFIG_POR_DEFECTO.width
-    };
-
-    await pool.query('UPDATE qrs SET config = ? WHERE id = ?', [JSON.stringify(config), id]);
-
-    const [actualizado] = await pool.query('SELECT * FROM qrs WHERE id = ?', [id]);
-    res.json(actualizado[0]);
-  } catch (error) {
-    console.error('Error al actualizar config QR:', error);
-    res.status(500).json({ mensaje: 'Error del servidor.' });
-  }
-};
-
 const generarQRImage = async (req, res) => {
   try {
     const { codigo } = req.params;
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const url = `${frontendUrl}/a/${codigo}`;
 
-    const [qrs] = await pool.query('SELECT config FROM qrs WHERE codigo = ?', [codigo]);
-    let config = CONFIG_POR_DEFECTO;
-    if (qrs.length > 0 && qrs[0].config) {
-      try { config = { ...config, ...JSON.parse(qrs[0].config) }; } catch {}
-    }
-
-    if (req.query.dark) config.dark = req.query.dark;
-    if (req.query.light) config.light = req.query.light;
-
     const qrBuffer = await QRCode.toBuffer(url, {
-      width: config.width,
+      width: CONFIG_POR_DEFECTO.width,
       margin: 2,
       color: {
-        dark: config.dark,
-        light: config.light
+        dark: CONFIG_POR_DEFECTO.dark,
+        light: CONFIG_POR_DEFECTO.light
       }
     });
 
@@ -196,4 +148,4 @@ const verificarQR = async (req, res) => {
   }
 };
 
-module.exports = { listar, obtenerPorFormulario, regenerar, toggleActivo, obtenerPresets, actualizarConfig, generarQRImage, verificarQR };
+module.exports = { listar, obtenerPorFormulario, regenerar, toggleActivo, generarQRImage, verificarQR };
