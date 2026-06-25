@@ -4,7 +4,7 @@ import {
   eliminarFormulario, toggleEstadoFormulario, listarGrados, listarEventos
 } from '../../services/adminService';
 
-const initialForm = { nombre: '', descripcion: '', evento: '', fecha_inicio: '', fecha_cierre: '', estado: 'activo', evento_id: '', grado_ids: [] };
+const initialForm = { nombre: '', descripcion: '', evento: '', estado: 'activo', evento_id: '', grado_ids: [] };
 
 export default function FormulariosPage() {
   const [formularios, setFormularios] = useState([]);
@@ -42,8 +42,6 @@ export default function FormulariosPage() {
       nombre: f.nombre,
       descripcion: f.descripcion || '',
       evento: f.evento || '',
-      fecha_inicio: f.fecha_inicio ? f.fecha_inicio.split('T')[0] : '',
-      fecha_cierre: f.fecha_cierre ? f.fecha_cierre.split('T')[0] : '',
       estado: f.estado,
       evento_id: f.evento_id || '',
       grado_ids: (f.grados || []).map(g => g.id)
@@ -114,23 +112,19 @@ export default function FormulariosPage() {
                 <th>Taller</th>
                 <th>Evento</th>
                 <th>Grados</th>
-                <th>Inicio</th>
-                <th>Cierre</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {formularios.length === 0 ? (
-                <tr><td colSpan={7} className="empty-state">No hay talleres registrados</td></tr>
+                <tr><td colSpan={5} className="empty-state">No hay talleres registrados</td></tr>
               ) : (
                 formularios.map((f) => (
                   <tr key={f.id}>
                     <td><strong>{f.nombre}</strong></td>
                     <td>{f.evento_nombre || f.evento || '-'}</td>
                     <td style={{ fontSize: 13 }}>{(f.grados || []).map(g => g.nombre).join(', ') || '-'}</td>
-                    <td>{new Date(f.fecha_inicio).toLocaleDateString('es-PE')}</td>
-                    <td>{new Date(f.fecha_cierre).toLocaleDateString('es-PE')}</td>
                     <td>
                       <span className={`badge ${f.estado === 'activo' ? 'badge-activo' : 'badge-inactivo'}`}>
                         {f.estado}
@@ -184,16 +178,6 @@ export default function FormulariosPage() {
               <div className="form-group">
                 <label className="form-label">Descripción</label>
                 <textarea className="form-input" rows={3} value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
-              </div>
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Fecha de inicio</label>
-                  <input type="date" className="form-input" value={form.fecha_inicio} onChange={(e) => setForm({ ...form, fecha_inicio: e.target.value })} required />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Fecha de cierre</label>
-                  <input type="date" className="form-input" value={form.fecha_cierre} onChange={(e) => setForm({ ...form, fecha_cierre: e.target.value })} required />
-                </div>
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setModal(false)}>Cancelar</button>

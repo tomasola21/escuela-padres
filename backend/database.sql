@@ -16,8 +16,8 @@ CREATE TABLE formularios (
   nombre VARCHAR(255) NOT NULL,
   descripcion TEXT,
   evento VARCHAR(255) DEFAULT NULL,
-  fecha_inicio DATE NOT NULL,
-  fecha_cierre DATE NOT NULL,
+  fecha_inicio DATE NULL,
+  fecha_cierre DATE NULL,
   estado ENUM('activo', 'inactivo') DEFAULT 'activo',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

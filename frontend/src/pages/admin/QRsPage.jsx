@@ -89,9 +89,9 @@ export default function QRsPage() {
             <h3 className="modal-title">Crear nuevo código QR</h3>
             <form onSubmit={handleCrearQR}>
               <div className="form-group">
-                <label className="form-label">Formulario</label>
+                <label className="form-label">Taller</label>
                 <select className="form-input" value={nuevoQR.formulario_id} onChange={(e) => setNuevoQR({ ...nuevoQR, formulario_id: e.target.value })} required>
-                  <option value="">Seleccionar formulario</option>
+                  <option value="">Seleccionar taller</option>
                   {formularios.map((f) => (
                     <option key={f.id} value={f.id}>{f.nombre}</option>
                   ))}
@@ -119,7 +119,7 @@ export default function QRsPage() {
           <table>
             <thead>
               <tr>
-                <th>Formulario</th>
+                <th>Taller</th>
                 <th>Grados</th>
                 <th>Código</th>
                 <th>Vigencia</th>

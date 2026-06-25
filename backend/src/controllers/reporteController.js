@@ -45,7 +45,7 @@ const generarReporte = async (req, res) => {
       doc.fontSize(10).font('Helvetica').text(`Generado: ${new Date().toLocaleDateString('es-PE')}`, { align: 'center' });
       doc.moveDown(1.5);
 
-      const headers = ['#', 'Formulario', 'Evento', 'Grado', 'Sección', 'Estudiante', 'Fecha', 'Navegador'];
+      const headers = ['#', 'Taller', 'Evento', 'Grado', 'Sección', 'Estudiante', 'Fecha', 'Navegador'];
       const widths = [20, 60, 50, 40, 30, 80, 60, 50];
       const tableTop = doc.y;
 
@@ -86,7 +86,7 @@ const generarReporte = async (req, res) => {
     } else if (formato === 'xlsx' || formato === 'excel') {
       const data = asistencias.map(a => ({
         ID: a.id,
-        Formulario: a.formulario,
+        Taller: a.formulario,
         Evento: a.evento,
         Grado: a.grado,
         Sección: a.seccion,

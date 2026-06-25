@@ -33,7 +33,7 @@ export default function AsistenciaPage() {
   }, [codigo]);
 
   if (cargando) return <PublicLayout><div className="loading">Verificando QR</div></PublicLayout>;
-  if (!qrValido) return <PublicLayout><MensajeError mensaje={error || 'Este formulario no se encuentra disponible.'} /></PublicLayout>;
+  if (!qrValido) return <PublicLayout><MensajeError         mensaje={error || 'Este taller no se encuentra disponible.'} /></PublicLayout>;
 
   return <FormularioAsistencia formulario={formulario} qrId={qrId} />;
 }
@@ -58,7 +58,7 @@ function MensajeError({ mensaje }) {
   return (
     <div className="success-screen">
       <div className="icon">&#10060;</div>
-      <h2 style={{ color: '#e53e3e' }}>Formulario no disponible</h2>
+      <h2 style={{ color: '#e53e3e' }}>Taller no disponible</h2>
       <p>{mensaje}</p>
     </div>
   );

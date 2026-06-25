@@ -36,7 +36,7 @@ export default function AdminLayout() {
   const links = [
     { to: '/admin', label: 'Dashboard', icon: Icons.dashboard },
     { to: '/admin/eventos', label: 'Eventos', icon: Icons.eventos },
-    { to: '/admin/formularios', label: 'Formularios', icon: Icons.formularios },
+    { to: '/admin/formularios', label: 'Talleres', icon: Icons.formularios },
     { to: '/admin/qrs', label: 'Códigos QR', icon: Icons.qr },
     { to: '/admin/estudiantes', label: 'Estudiantes', icon: Icons.estudiantes },
     { to: '/admin/grados', label: 'Grados', icon: Icons.grados },

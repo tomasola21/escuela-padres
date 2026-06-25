@@ -94,12 +94,12 @@ export default function DashboardPage() {
   if (cargando && !data) return <div className="loading">Cargando dashboard</div>;
 
   const stats = data ? [
-    { label: 'Total Formularios', value: data.totalFormularios },
+    { label: 'Total Talleres', value: data.totalFormularios },
     { label: 'Registros Filtrados', value: data.totalRegistros },
     { label: 'Participación', value: data.totalEstudiantes > 0 ? Math.round(data.totalRegistros / data.totalEstudiantes * 100) + '%' : '0%' },
     { label: 'Total Estudiantes', value: data.totalEstudiantes },
-    { label: 'Formularios Activos', value: data.formulariosActivos },
-    { label: 'Formularios Inactivos', value: data.formulariosInactivos }
+    { label: 'Talleres Activos', value: data.formulariosActivos },
+    { label: 'Talleres Inactivos', value: data.formulariosInactivos }
   ] : [];
 
   const barGradoData = data ? {
@@ -163,7 +163,7 @@ export default function DashboardPage() {
       <div className="card" style={{ marginBottom: 24, padding: 20 }}>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'end' }}>
           <div className="form-group" style={{ flex: '1 1 180px', marginBottom: 0 }}>
-            <label className="form-label">Formulario</label>
+            <label className="form-label">Taller</label>
             <select className="form-input" value={filtroFormulario} onChange={handleFormularioChange}>
               <option value="">Todos</option>
               {formularios.map(f => <option key={f.id} value={f.id}>{f.nombre}</option>)}
@@ -219,7 +219,7 @@ export default function DashboardPage() {
             )}
             {doughnutData && doughnutData.labels.length > 0 && (
               <div className="card">
-                <h3 className="card-title">Asistencias por Formulario</h3>
+                <h3 className="card-title">Asistencias por Taller</h3>
                 <Doughnut data={doughnutData} options={chartOptions} />
               </div>
             )}
@@ -250,7 +250,7 @@ export default function DashboardPage() {
                       <th>Estudiante</th>
                       <th>Grado</th>
                       <th>Sección</th>
-                      <th>Formulario</th>
+                      <th>Taller</th>
                       <th>Evento</th>
                       <th>Registrado por</th>
                       <th>Fecha</th>

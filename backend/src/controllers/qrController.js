@@ -52,7 +52,7 @@ const crear = async (req, res) => {
     const { formulario_id, fecha_inicio, fecha_cierre } = req.body;
 
     const [formularios] = await pool.query('SELECT * FROM formularios WHERE id = ?', [formulario_id]);
-    if (formularios.length === 0) return res.status(404).json({ mensaje: 'Formulario no encontrado.' });
+    if (formularios.length === 0) return res.status(404).json({ mensaje: 'Taller no encontrado.' });
 
     const codigo = require('crypto').randomBytes(16).toString('hex');
     const [resultado] = await pool.query(
@@ -150,7 +150,7 @@ const verificarQR = async (req, res) => {
     const qr = qrs[0];
 
     if (!qr.activo || qr.formulario_estado === 'inactivo') {
-      return res.status(400).json({ mensaje: 'Este formulario no se encuentra disponible.', disponible: false });
+      return res.status(400).json({ mensaje: 'Este taller no se encuentra disponible.', disponible: false });
     }
 
     const hoy = new Date();
@@ -159,7 +159,7 @@ const verificarQR = async (req, res) => {
     cierre.setHours(23, 59, 59, 999);
 
     if (hoy < inicio || hoy > cierre) {
-      return res.status(400).json({ mensaje: 'Este formulario no se encuentra disponible.', disponible: false });
+      return res.status(400).json({ mensaje: 'Este taller no se encuentra disponible.', disponible: false });
     }
 
     const [grados] = await pool.query(

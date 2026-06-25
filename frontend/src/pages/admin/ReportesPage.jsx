@@ -74,7 +74,7 @@ export default function ReportesPage() {
       <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ minWidth: 200, margin: 0 }}>
-            <label className="form-label">Formulario</label>
+            <label className="form-label">Taller</label>
             <select className="form-input" value={filtros.formulario_id} onChange={handleFormularioChange}>
               <option value="">Todos</option>
               {formularios.map((f) => <option key={f.id} value={f.id}>{f.nombre}</option>)}

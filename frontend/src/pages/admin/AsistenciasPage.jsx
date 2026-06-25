@@ -60,7 +60,7 @@ export default function AsistenciasPage() {
       <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ minWidth: 180, margin: 0 }}>
-            <label className="form-label">Formulario</label>
+            <label className="form-label">Taller</label>
             <select className="form-input" value={filtros.formulario_id} onChange={handleFormularioChange}>
               <option value="">Todos</option>
               {formularios.map((f) => <option key={f.id} value={f.id}>{f.nombre}</option>)}
@@ -98,7 +98,7 @@ export default function AsistenciasPage() {
             <thead>
               <tr>
                 <th>#</th>
-                <th>Formulario</th>
+                <th>Taller</th>
                 <th>Evento</th>
                 <th>Grado</th>
                 <th>Sección</th>
