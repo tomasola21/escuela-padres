@@ -24,6 +24,7 @@ app.use('/api/grados', require('../src/routes/grados'));
 app.use('/api/secciones', require('../src/routes/secciones'));
 app.use('/api/estudiantes', require('../src/routes/estudiantes'));
 app.use('/api/asistencias', require('../src/routes/asistencias'));
+app.use('/api/eventos', require('../src/routes/eventos'));
 app.use('/api/configuracion', require('../src/routes/configuracion'));
 app.use('/api/reportes', require('../src/routes/reportes'));
 
