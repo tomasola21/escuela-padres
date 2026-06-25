@@ -3,7 +3,7 @@ const { detectarNavegador } = require('../utils/helpers');
 
 const registrar = async (req, res) => {
   try {
-    const { formulario_id, qr_id, grado_id, seccion_id, estudiante_id, latitud, longitud, device_id } = req.body;
+    const { formulario_id, qr_id, grado_id, seccion_id, estudiante_id, latitud, longitud, device_id, registrado_por } = req.body;
 
     const [config] = await pool.query("SELECT valor FROM configuracion WHERE clave = 'permitir_un_solo_envio'");
     const permitirUnSoloEnvio = config.length > 0 && config[0].valor === 'true';
@@ -24,9 +24,9 @@ const registrar = async (req, res) => {
     const navegador = detectarNavegador(req.headers['user-agent']);
 
     const [resultado] = await pool.query(
-      `INSERT INTO asistencias (formulario_id, qr_id, grado_id, seccion_id, estudiante_id, device_id, latitud, longitud, navegador)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [formulario_id, qr_id || null, grado_id, seccion_id, estudiante_id, device_id || null, latitud || null, longitud || null, navegador]
+      `INSERT INTO asistencias (formulario_id, qr_id, grado_id, seccion_id, estudiante_id, device_id, latitud, longitud, navegador, registrado_por)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [formulario_id, qr_id || null, grado_id, seccion_id, estudiante_id, device_id || null, latitud || null, longitud || null, navegador, registrado_por || null]
     );
 
     const [asistencia] = await pool.query(

@@ -54,9 +54,6 @@ const crear = async (req, res) => {
     const [formularios] = await pool.query('SELECT * FROM formularios WHERE id = ?', [formulario_id]);
     if (formularios.length === 0) return res.status(404).json({ mensaje: 'Formulario no encontrado.' });
 
-    const [existentes] = await pool.query('SELECT id FROM qrs WHERE formulario_id = ?', [formulario_id]);
-    if (existentes.length > 0) return res.status(400).json({ mensaje: 'Este formulario ya tiene un código QR.' });
-
     const codigo = require('crypto').randomBytes(16).toString('hex');
     const [resultado] = await pool.query(
       'INSERT INTO qrs (formulario_id, codigo, fecha_inicio, fecha_cierre) VALUES (?, ?, ?, ?)',

@@ -74,6 +74,7 @@ function FormularioAsistencia({ formulario, qrId }) {
   const [enviando, setEnviando] = useState(false);
   const [registrado, setRegistrado] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [tipoRegistro, setTipoRegistro] = useState('');
   const { ubicacion, error: geoError, solicitando, solicitarUbicacion } = useGeolocation();
 
   useEffect(() => {
@@ -133,6 +134,11 @@ function FormularioAsistencia({ formulario, qrId }) {
       return;
     }
 
+    if (!tipoRegistro) {
+      setErrorMsg('Por favor, selecciona quién registra la asistencia.');
+      return;
+    }
+
     if (!ubicacion) {
       setErrorMsg('Debes proporcionar tu ubicación para registrar la asistencia.');
       return;
@@ -165,7 +171,8 @@ function FormularioAsistencia({ formulario, qrId }) {
         estudiante_id: parseInt(estudianteId),
         latitud: ubicacion?.latitud || null,
         longitud: ubicacion?.longitud || null,
-        device_id: deviceId
+        device_id: deviceId,
+        registrado_por: tipoRegistro
       });
       setRegistrado(true);
     } catch (err) {
@@ -231,6 +238,18 @@ function FormularioAsistencia({ formulario, qrId }) {
           <select className="form-input" value={estudianteId} onChange={(e) => setEstudianteId(e.target.value)} required disabled={!gradoId || !seccionId}>
             <option value="">{gradoId && seccionId ? 'Seleccionar estudiante' : 'Primero selecciona grado y sección'}</option>
             {estudiantes.map((e) => <option key={e.id} value={e.id}>{e.nombre_completo}</option>)}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Registrado por</label>
+          <select className="form-input" value={tipoRegistro} onChange={(e) => setTipoRegistro(e.target.value)} required>
+            <option value="">Seleccionar</option>
+            <option value="Padre">Padre</option>
+            <option value="Madre">Madre</option>
+            <option value="Ambos">Ambos</option>
+            <option value="Apoderado">Apoderado</option>
+            <option value="Otro">Otro</option>
           </select>
         </div>
 

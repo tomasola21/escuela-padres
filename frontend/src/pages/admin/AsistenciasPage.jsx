@@ -90,13 +90,14 @@ export default function AsistenciasPage() {
                 <th>Sección</th>
                 <th>Estudiante</th>
                 <th>Fecha</th>
+                <th>Registrado por</th>
                 <th>Navegador</th>
                 <th>Ubicación</th>
               </tr>
             </thead>
             <tbody>
               {asistencias.length === 0 ? (
-                <tr><td colSpan={9} className="empty-state">No hay registros de asistencia</td></tr>
+                <tr><td colSpan={10} className="empty-state">No hay registros de asistencia</td></tr>
               ) : (
                 asistencias.map((a, i) => (
                   <tr key={a.id}>
@@ -107,6 +108,7 @@ export default function AsistenciasPage() {
                     <td>{a.seccion_nombre}</td>
                     <td><strong>{a.estudiante_nombre}</strong></td>
                     <td>{new Date(a.fecha_registro).toLocaleString('es-PE')}</td>
+                    <td>{a.registrado_por || '-'}</td>
                     <td>{a.navegador}</td>
                     <td>
                       {a.latitud && a.longitud ? (

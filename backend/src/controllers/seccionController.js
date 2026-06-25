@@ -23,8 +23,7 @@ const listar = async (req, res) => {
     let query = 'SELECT * FROM secciones';
     const params = [];
     if (grado_id) {
-      query = `SELECT DISTINCT s.* FROM secciones s JOIN estudiantes e ON e.seccion_id = s.id WHERE e.grado_id = ?`;
-      params.push(grado_id);
+      query = 'SELECT * FROM secciones';
     }
     query += ' ORDER BY nombre ASC';
     const [secciones] = await pool.query(query, params);

@@ -92,7 +92,7 @@ export default function QRsPage() {
                 <label className="form-label">Formulario</label>
                 <select className="form-input" value={nuevoQR.formulario_id} onChange={(e) => setNuevoQR({ ...nuevoQR, formulario_id: e.target.value })} required>
                   <option value="">Seleccionar formulario</option>
-                  {formularios.filter((f) => !qrs.some((q) => q.formulario_id === f.id)).map((f) => (
+                  {formularios.map((f) => (
                     <option key={f.id} value={f.id}>{f.nombre}</option>
                   ))}
                 </select>

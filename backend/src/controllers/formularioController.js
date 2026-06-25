@@ -51,7 +51,7 @@ const crear = async (req, res) => {
     }
 
     const codigo = require('crypto').randomBytes(16).toString('hex');
-    await pool.query('INSERT INTO qrs (formulario_id, codigo) VALUES (?, ?)', [resultado.insertId, codigo]);
+    await pool.query('INSERT INTO qrs (formulario_id, codigo, fecha_inicio, fecha_cierre) VALUES (?, ?, ?, ?)', [resultado.insertId, codigo, fecha_inicio, fecha_cierre]);
 
     const [nuevo] = await pool.query(selectBase + ' WHERE f.id = ?', [resultado.insertId]);
     const [grados] = await pool.query(
