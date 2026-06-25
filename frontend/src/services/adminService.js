@@ -50,6 +50,11 @@ export const crearQR = async (data) => {
   return response.data;
 };
 
+export const eliminarQR = async (id) => {
+  const response = await api.delete(`/qr/${id}`);
+  return response.data;
+};
+
 export const regenerarQR = async (formularioId) => {
   const response = await api.post(`/qr/${formularioId}/regenerar`);
   return response.data;

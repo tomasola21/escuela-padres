@@ -81,6 +81,19 @@ const regenerar = async (req, res) => {
   }
 };
 
+const eliminar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [qrs] = await pool.query('SELECT * FROM qrs WHERE id = ?', [id]);
+    if (qrs.length === 0) return res.status(404).json({ mensaje: 'QR no encontrado.' });
+    await pool.query('DELETE FROM qrs WHERE id = ?', [id]);
+    res.json({ mensaje: 'QR eliminado correctamente.' });
+  } catch (error) {
+    console.error('Error al eliminar QR:', error);
+    res.status(500).json({ mensaje: 'Error del servidor.' });
+  }
+};
+
 const toggleActivo = async (req, res) => {
   try {
     const { id } = req.params;
@@ -173,4 +186,4 @@ const verificarQR = async (req, res) => {
   }
 };
 
-module.exports = { listar, obtenerPorFormulario, crear, regenerar, toggleActivo, generarQRImage, verificarQR };
+module.exports = { listar, obtenerPorFormulario, crear, regenerar, eliminar, toggleActivo, generarQRImage, verificarQR };

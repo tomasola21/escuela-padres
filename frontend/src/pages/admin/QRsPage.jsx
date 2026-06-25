@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { listarQRs, listarFormularios, crearQR, regenerarQR, toggleActivoQR } from '../../services/adminService';
+import { listarQRs, listarFormularios, crearQR, eliminarQR, toggleActivoQR } from '../../services/adminService';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
@@ -31,10 +31,10 @@ export default function QRsPage() {
     } catch { }
   };
 
-  const handleRegenerar = async (formularioId) => {
-    if (!confirm('¿Regenerar código QR? El anterior dejará de funcionar.')) return;
+  const handleEliminar = async (id) => {
+    if (!confirm('¿Eliminar este código QR? Las asistencias vinculadas quedarán sin referencia.')) return;
     try {
-      await regenerarQR(formularioId);
+      await eliminarQR(id);
       await cargar();
     } catch { }
   };
@@ -154,8 +154,8 @@ export default function QRsPage() {
                         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                           <button className="btn btn-success btn-sm" onClick={() => descargarPNG(qr.codigo)}>PNG</button>
                           <button className="btn btn-warning btn-sm" onClick={() => descargarPDF(qr.codigo, qr.formulario_nombre)}>Descargar PNG</button>
-                          <button className="btn btn-secondary btn-sm" onClick={() => handleRegenerar(qr.formulario_id)}>Regenerar</button>
-                          <button className="btn btn-sm" style={{ background: qr.activo ? '#fefcbf' : '#c6f6d5', color: qr.activo ? '#744210' : '#22543d' }} onClick={() => handleToggle(qr.id)}>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleEliminar(qr.id)}>Eliminar</button>
+                          <button className="btn btn-sm" style={{ background: qr.activo ? 'rgba(214,158,46,0.12)' : 'rgba(56,161,105,0.12)', color: qr.activo ? 'var(--warning)' : 'var(--success)' }} onClick={() => handleToggle(qr.id)}>
                             {qr.activo ? 'Desactivar' : 'Activar'}
                           </button>
                         </div>

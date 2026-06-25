@@ -12,5 +12,6 @@ router.get('/formulario/:formulario_id', controller.obtenerPorFormulario);
 router.post('/', authorize('administrador'), controller.crear);
 router.post('/:formulario_id/regenerar', authorize('administrador'), controller.regenerar);
 router.patch('/:id/toggle-activo', authorize('administrador'), controller.toggleActivo);
+router.delete('/:id', authorize('administrador'), controller.eliminar);
 
 module.exports = router;
