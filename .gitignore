@@ -9,3 +9,6 @@ create-db.js
 check-db.js
 update-password.js
 deploy-backend.ps1
+
+.vercel
+.env*

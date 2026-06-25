@@ -8,13 +8,21 @@ const CONFIG_POR_DEFECTO = { dark: '#000000', light: '#ffffff', width: 400 };
 const listar = async (req, res) => {
   try {
     const [qrs] = await pool.query(
-      `SELECT q.*, f.nombre as formulario_nombre, f.grado_id, g.nombre as grado_nombre
-       FROM qrs q 
-       JOIN formularios f ON q.formulario_id = f.id 
-       LEFT JOIN grados g ON f.grado_id = g.id
+      `SELECT q.*, f.nombre as formulario_nombre, f.evento, e.nombre as evento_nombre
+       FROM qrs q
+       JOIN formularios f ON q.formulario_id = f.id
+       LEFT JOIN eventos e ON f.evento_id = e.id
        ORDER BY q.created_at DESC`
     );
-    res.json(qrs);
+    const result = [];
+    for (const qr of qrs) {
+      const [grados] = await pool.query(
+        `SELECT g.nombre FROM formulario_grados fg JOIN grados g ON fg.grado_id = g.id WHERE fg.formulario_id = ?`,
+        [qr.formulario_id]
+      );
+      result.push({ ...qr, grados: grados.map(g => g.nombre) });
+    }
+    res.json(result);
   } catch (error) {
     console.error('Error al listar QRs:', error);
     res.status(500).json({ mensaje: 'Error del servidor.' });
@@ -25,15 +33,13 @@ const obtenerPorFormulario = async (req, res) => {
   try {
     const { formulario_id } = req.params;
     const [qrs] = await pool.query(
-      `SELECT q.*, f.nombre as formulario_nombre 
-       FROM qrs q 
-       JOIN formularios f ON q.formulario_id = f.id 
+      `SELECT q.*, f.nombre as formulario_nombre
+       FROM qrs q
+       JOIN formularios f ON q.formulario_id = f.id
        WHERE q.formulario_id = ?`,
       [formulario_id]
     );
-    if (qrs.length === 0) {
-      return res.status(404).json({ mensaje: 'QR no encontrado para este formulario.' });
-    }
+    if (qrs.length === 0) return res.status(404).json({ mensaje: 'QR no encontrado para este formulario.' });
     res.json(qrs[0]);
   } catch (error) {
     console.error('Error al obtener QR:', error);
@@ -45,9 +51,7 @@ const regenerar = async (req, res) => {
   try {
     const { formulario_id } = req.params;
     const nuevoCodigo = crypto.randomBytes(16).toString('hex');
-
     await pool.query('UPDATE qrs SET codigo = ? WHERE formulario_id = ?', [nuevoCodigo, formulario_id]);
-
     const [qr] = await pool.query('SELECT * FROM qrs WHERE formulario_id = ?', [formulario_id]);
     res.json(qr[0]);
   } catch (error) {
@@ -60,13 +64,9 @@ const toggleActivo = async (req, res) => {
   try {
     const { id } = req.params;
     const [qrs] = await pool.query('SELECT * FROM qrs WHERE id = ?', [id]);
-    if (qrs.length === 0) {
-      return res.status(404).json({ mensaje: 'QR no encontrado.' });
-    }
-
+    if (qrs.length === 0) return res.status(404).json({ mensaje: 'QR no encontrado.' });
     const nuevoEstado = qrs[0].activo ? 0 : 1;
     await pool.query('UPDATE qrs SET activo = ? WHERE id = ?', [nuevoEstado, id]);
-
     const [actualizado] = await pool.query('SELECT * FROM qrs WHERE id = ?', [id]);
     res.json(actualizado[0]);
   } catch (error) {
@@ -84,10 +84,7 @@ const generarQRImage = async (req, res) => {
     const qrBuffer = await QRCode.toBuffer(url, {
       width: CONFIG_POR_DEFECTO.width,
       margin: 2,
-      color: {
-        dark: CONFIG_POR_DEFECTO.dark,
-        light: CONFIG_POR_DEFECTO.light
-      }
+      color: { dark: CONFIG_POR_DEFECTO.dark, light: CONFIG_POR_DEFECTO.light }
     });
 
     res.setHeader('Content-Type', 'image/png');
@@ -104,24 +101,21 @@ const verificarQR = async (req, res) => {
     const { codigo } = req.params;
 
     const [qrs] = await pool.query(
-      `      SELECT q.*, f.nombre as formulario_nombre, f.descripcion, f.evento, f.fecha_inicio, f.fecha_cierre, f.estado as formulario_estado, f.grado_id
-       FROM qrs q 
-       JOIN formularios f ON q.formulario_id = f.id 
+      `SELECT q.*, f.nombre as formulario_nombre, f.descripcion, f.evento as evento_nombre,
+              f.fecha_inicio, f.fecha_cierre, f.estado as formulario_estado,
+              f.evento_id, e.logo as evento_logo
+       FROM qrs q
+       JOIN formularios f ON q.formulario_id = f.id
+       LEFT JOIN eventos e ON f.evento_id = e.id
        WHERE q.codigo = ?`,
       [codigo]
     );
 
-    if (qrs.length === 0) {
-      return res.status(404).json({ mensaje: 'QR no encontrado.' });
-    }
+    if (qrs.length === 0) return res.status(404).json({ mensaje: 'QR no encontrado.' });
 
     const qr = qrs[0];
 
-    if (!qr.activo) {
-      return res.status(400).json({ mensaje: 'Este formulario no se encuentra disponible.', disponible: false });
-    }
-
-    if (qr.formulario_estado === 'inactivo') {
+    if (!qr.activo || qr.formulario_estado === 'inactivo') {
       return res.status(400).json({ mensaje: 'Este formulario no se encuentra disponible.', disponible: false });
     }
 
@@ -134,14 +128,21 @@ const verificarQR = async (req, res) => {
       return res.status(400).json({ mensaje: 'Este formulario no se encuentra disponible.', disponible: false });
     }
 
+    const [grados] = await pool.query(
+      `SELECT g.id, g.nombre FROM formulario_grados fg JOIN grados g ON fg.grado_id = g.id WHERE fg.formulario_id = ?`,
+      [qr.formulario_id]
+    );
+
     res.json({
       disponible: true,
       formulario: {
         id: qr.formulario_id,
         nombre: qr.formulario_nombre,
         descripcion: qr.descripcion,
-        evento: qr.evento,
-        grado_id: qr.grado_id
+        evento: qr.evento_nombre,
+        evento_id: qr.evento_id,
+        evento_logo: qr.evento_logo,
+        grados
       }
     });
   } catch (error) {

@@ -15,6 +15,7 @@ export default function AdminLayout() {
   const links = [
     { to: '/admin', label: 'Dashboard', icon: '📊' },
     { to: '/admin/formularios', label: 'Formularios', icon: '📋' },
+    { to: '/admin/eventos', label: 'Eventos', icon: '🏷️' },
     { to: '/admin/qrs', label: 'Códigos QR', icon: '📱' },
     { to: '/admin/grados', label: 'Grados', icon: '📚' },
     { to: '/admin/secciones', label: 'Secciones', icon: '📐' },

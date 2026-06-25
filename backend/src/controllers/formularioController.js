@@ -1,11 +1,20 @@
 const pool = require('../config/database');
 
-const selectConGrado = `SELECT f.*, g.nombre as grado_nombre FROM formularios f LEFT JOIN grados g ON f.grado_id = g.id`;
+const selectBase = `SELECT f.*, e.nombre as evento_nombre, e.logo as evento_logo
+  FROM formularios f LEFT JOIN eventos e ON f.evento_id = e.id`;
 
 const listar = async (req, res) => {
   try {
-    const [formularios] = await pool.query(selectConGrado + ' ORDER BY f.created_at DESC');
-    res.json(formularios);
+    const [formularios] = await pool.query(selectBase + ' ORDER BY f.created_at DESC');
+    const result = [];
+    for (const f of formularios) {
+      const [grados] = await pool.query(
+        `SELECT g.id, g.nombre FROM formulario_grados fg JOIN grados g ON fg.grado_id = g.id WHERE fg.formulario_id = ?`,
+        [f.id]
+      );
+      result.push({ ...f, grados });
+    }
+    res.json(result);
   } catch (error) {
     console.error('Error al listar formularios:', error);
     res.status(500).json({ mensaje: 'Error del servidor.' });
@@ -15,11 +24,13 @@ const listar = async (req, res) => {
 const obtener = async (req, res) => {
   try {
     const { id } = req.params;
-    const [formularios] = await pool.query(selectConGrado + ' WHERE f.id = ?', [id]);
-    if (formularios.length === 0) {
-      return res.status(404).json({ mensaje: 'Formulario no encontrado.' });
-    }
-    res.json(formularios[0]);
+    const [formularios] = await pool.query(selectBase + ' WHERE f.id = ?', [id]);
+    if (formularios.length === 0) return res.status(404).json({ mensaje: 'Formulario no encontrado.' });
+    const [grados] = await pool.query(
+      `SELECT g.id, g.nombre FROM formulario_grados fg JOIN grados g ON fg.grado_id = g.id WHERE fg.formulario_id = ?`,
+      [id]
+    );
+    res.json({ ...formularios[0], grados });
   } catch (error) {
     console.error('Error al obtener formulario:', error);
     res.status(500).json({ mensaje: 'Error del servidor.' });
@@ -28,17 +39,26 @@ const obtener = async (req, res) => {
 
 const crear = async (req, res) => {
   try {
-    const { nombre, descripcion, evento, fecha_inicio, fecha_cierre, estado, grado_id } = req.body;
+    const { nombre, descripcion, evento, fecha_inicio, fecha_cierre, estado, evento_id, grado_ids } = req.body;
     const [resultado] = await pool.query(
-      'INSERT INTO formularios (nombre, descripcion, evento, fecha_inicio, fecha_cierre, estado, grado_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [nombre, descripcion || null, evento || null, fecha_inicio, fecha_cierre, estado || 'activo', grado_id || null]
+      'INSERT INTO formularios (nombre, descripcion, evento, fecha_inicio, fecha_cierre, estado, evento_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [nombre, descripcion || null, evento || null, fecha_inicio, fecha_cierre, estado || 'activo', evento_id || null]
     );
+
+    if (grado_ids && grado_ids.length > 0) {
+      const values = grado_ids.map(g => [resultado.insertId, g]);
+      await pool.query('INSERT INTO formulario_grados (formulario_id, grado_id) VALUES ?', [values]);
+    }
 
     const codigo = require('crypto').randomBytes(16).toString('hex');
     await pool.query('INSERT INTO qrs (formulario_id, codigo) VALUES (?, ?)', [resultado.insertId, codigo]);
 
-    const [nuevo] = await pool.query(selectConGrado + ' WHERE f.id = ?', [resultado.insertId]);
-    res.status(201).json(nuevo[0]);
+    const [nuevo] = await pool.query(selectBase + ' WHERE f.id = ?', [resultado.insertId]);
+    const [grados] = await pool.query(
+      `SELECT g.id, g.nombre FROM formulario_grados fg JOIN grados g ON fg.grado_id = g.id WHERE fg.formulario_id = ?`,
+      [resultado.insertId]
+    );
+    res.status(201).json({ ...nuevo[0], grados });
   } catch (error) {
     console.error('Error al crear formulario:', error);
     res.status(500).json({ mensaje: 'Error del servidor.' });
@@ -48,20 +68,30 @@ const crear = async (req, res) => {
 const actualizar = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, evento, fecha_inicio, fecha_cierre, estado, grado_id } = req.body;
+    const { nombre, descripcion, evento, fecha_inicio, fecha_cierre, estado, evento_id, grado_ids } = req.body;
 
     const [existente] = await pool.query('SELECT * FROM formularios WHERE id = ?', [id]);
-    if (existente.length === 0) {
-      return res.status(404).json({ mensaje: 'Formulario no encontrado.' });
-    }
+    if (existente.length === 0) return res.status(404).json({ mensaje: 'Formulario no encontrado.' });
 
     await pool.query(
-      'UPDATE formularios SET nombre = ?, descripcion = ?, evento = ?, fecha_inicio = ?, fecha_cierre = ?, estado = ?, grado_id = ? WHERE id = ?',
-      [nombre, descripcion || null, evento || null, fecha_inicio, fecha_cierre, estado, grado_id || null, id]
+      'UPDATE formularios SET nombre = ?, descripcion = ?, evento = ?, fecha_inicio = ?, fecha_cierre = ?, estado = ?, evento_id = ? WHERE id = ?',
+      [nombre, descripcion || null, evento || null, fecha_inicio, fecha_cierre, estado, evento_id !== undefined ? evento_id : existente[0].evento_id, id]
     );
 
-    const [actualizado] = await pool.query(selectConGrado + ' WHERE f.id = ?', [id]);
-    res.json(actualizado[0]);
+    if (grado_ids !== undefined) {
+      await pool.query('DELETE FROM formulario_grados WHERE formulario_id = ?', [id]);
+      if (grado_ids.length > 0) {
+        const values = grado_ids.map(g => [id, g]);
+        await pool.query('INSERT INTO formulario_grados (formulario_id, grado_id) VALUES ?', [values]);
+      }
+    }
+
+    const [actualizado] = await pool.query(selectBase + ' WHERE f.id = ?', [id]);
+    const [grados] = await pool.query(
+      `SELECT g.id, g.nombre FROM formulario_grados fg JOIN grados g ON fg.grado_id = g.id WHERE fg.formulario_id = ?`,
+      [id]
+    );
+    res.json({ ...actualizado[0], grados });
   } catch (error) {
     console.error('Error al actualizar formulario:', error);
     res.status(500).json({ mensaje: 'Error del servidor.' });
@@ -72,9 +102,7 @@ const eliminar = async (req, res) => {
   try {
     const { id } = req.params;
     const [existente] = await pool.query('SELECT * FROM formularios WHERE id = ?', [id]);
-    if (existente.length === 0) {
-      return res.status(404).json({ mensaje: 'Formulario no encontrado.' });
-    }
+    if (existente.length === 0) return res.status(404).json({ mensaje: 'Formulario no encontrado.' });
     await pool.query('DELETE FROM formularios WHERE id = ?', [id]);
     res.json({ mensaje: 'Formulario eliminado correctamente.' });
   } catch (error) {
@@ -87,13 +115,9 @@ const toggleEstado = async (req, res) => {
   try {
     const { id } = req.params;
     const [formularios] = await pool.query('SELECT * FROM formularios WHERE id = ?', [id]);
-    if (formularios.length === 0) {
-      return res.status(404).json({ mensaje: 'Formulario no encontrado.' });
-    }
-
+    if (formularios.length === 0) return res.status(404).json({ mensaje: 'Formulario no encontrado.' });
     const nuevoEstado = formularios[0].estado === 'activo' ? 'inactivo' : 'activo';
     await pool.query('UPDATE formularios SET estado = ? WHERE id = ?', [nuevoEstado, id]);
-
     const [actualizado] = await pool.query('SELECT * FROM formularios WHERE id = ?', [id]);
     res.json(actualizado[0]);
   } catch (error) {

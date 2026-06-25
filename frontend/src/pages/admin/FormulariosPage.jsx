@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import {
   listarFormularios, crearFormulario, actualizarFormulario,
-  eliminarFormulario, toggleEstadoFormulario, listarGrados
+  eliminarFormulario, toggleEstadoFormulario, listarGrados, listarEventos
 } from '../../services/adminService';
 
-const initialForm = { nombre: '', descripcion: '', evento: '', fecha_inicio: '', fecha_cierre: '', estado: 'activo', grado_id: '' };
+const initialForm = { nombre: '', descripcion: '', evento: '', fecha_inicio: '', fecha_cierre: '', estado: 'activo', evento_id: '', grado_ids: [] };
 
 export default function FormulariosPage() {
   const [formularios, setFormularios] = useState([]);
   const [grados, setGrados] = useState([]);
+  const [eventos, setEventos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(initialForm);
@@ -26,6 +27,7 @@ export default function FormulariosPage() {
   useEffect(() => {
     cargar();
     listarGrados().then(setGrados).catch(() => {});
+    listarEventos().then(setEventos).catch(() => {});
   }, []);
 
   const openCreate = () => {
@@ -43,16 +45,30 @@ export default function FormulariosPage() {
       fecha_inicio: f.fecha_inicio ? f.fecha_inicio.split('T')[0] : '',
       fecha_cierre: f.fecha_cierre ? f.fecha_cierre.split('T')[0] : '',
       estado: f.estado,
-      grado_id: f.grado_id || ''
+      evento_id: f.evento_id || '',
+      grado_ids: (f.grados || []).map(g => g.id)
     });
     setEditandoId(f.id);
     setError('');
     setModal(true);
   };
 
+  const handleGradoToggle = (gradoId) => {
+    setForm(prev => ({
+      ...prev,
+      grado_ids: prev.grado_ids.includes(gradoId)
+        ? prev.grado_ids.filter(id => id !== gradoId)
+        : [...prev.grado_ids, gradoId]
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (form.grado_ids.length === 0) {
+      setError('Debes seleccionar al menos un grado.');
+      return;
+    }
     try {
       if (editandoId) {
         await actualizarFormulario(editandoId, form);
@@ -86,8 +102,8 @@ export default function FormulariosPage() {
   return (
     <div>
       <div className="page-header">
-        <h2 className="page-title" style={{ margin: 0 }}>Gestión de Formularios</h2>
-        <button className="btn btn-primary" onClick={openCreate}>+ Nuevo Formulario</button>
+        <h2 className="page-title" style={{ margin: 0 }}>Gestión de Talleres</h2>
+        <button className="btn btn-primary" onClick={openCreate}>+ Nuevo Taller</button>
       </div>
 
       <div className="card">
@@ -97,7 +113,7 @@ export default function FormulariosPage() {
               <tr>
                 <th>Taller</th>
                 <th>Evento</th>
-                <th>Grado</th>
+                <th>Grados</th>
                 <th>Inicio</th>
                 <th>Cierre</th>
                 <th>Estado</th>
@@ -111,8 +127,8 @@ export default function FormulariosPage() {
                 formularios.map((f) => (
                   <tr key={f.id}>
                     <td><strong>{f.nombre}</strong></td>
-                    <td>{f.evento || '-'}</td>
-                    <td>{f.grado_nombre || '-'}</td>
+                    <td>{f.evento_nombre || f.evento || '-'}</td>
+                    <td style={{ fontSize: 13 }}>{(f.grados || []).map(g => g.nombre).join(', ') || '-'}</td>
                     <td>{new Date(f.fecha_inicio).toLocaleDateString('es-PE')}</td>
                     <td>{new Date(f.fecha_cierre).toLocaleDateString('es-PE')}</td>
                     <td>
@@ -140,23 +156,30 @@ export default function FormulariosPage() {
       {modal && (
         <div className="modal-overlay" onClick={() => setModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title">{editandoId ? 'Editar Formulario' : 'Nuevo Formulario'}</h3>
+            <h3 className="modal-title">{editandoId ? 'Editar Taller' : 'Nuevo Taller'}</h3>
             {error && <div className="alert alert-error">{error}</div>}
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label className="form-label">Nombre del formulario</label>
+                <label className="form-label">Nombre del taller</label>
                 <input className="form-input" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} required />
               </div>
               <div className="form-group">
-                <label className="form-label">Evento <span style={{ fontWeight: 400, color: '#718096' }}>(opcional)</span></label>
-                <input className="form-input" value={form.evento} onChange={(e) => setForm({ ...form, evento: e.target.value })} placeholder="Ej: Escuela de Padres, APAFA, Charla" />
+                <label className="form-label">Evento</label>
+                <select className="form-input" value={form.evento_id} onChange={(e) => setForm({ ...form, evento_id: e.target.value })}>
+                  <option value="">Sin evento</option>
+                  {eventos.map((ev) => <option key={ev.id} value={ev.id}>{ev.nombre}</option>)}
+                </select>
               </div>
               <div className="form-group">
-                <label className="form-label">Grado <span style={{ fontWeight: 400, color: '#e53e3e' }}>*</span></label>
-                <select className="form-input" value={form.grado_id} onChange={(e) => setForm({ ...form, grado_id: e.target.value })} required>
-                  <option value="">Seleccionar grado</option>
-                  {grados.map((g) => <option key={g.id} value={g.id}>{g.nombre}</option>)}
-                </select>
+                <label className="form-label">Grados <span style={{ fontWeight: 400, color: '#e53e3e' }}>*</span></label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+                  {grados.map((g) => (
+                    <label key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, cursor: 'pointer', padding: '4px 8px', borderRadius: 4, background: form.grado_ids.includes(g.id) ? '#bee3f8' : '#f7fafc', border: '1px solid', borderColor: form.grado_ids.includes(g.id) ? '#63b3ed' : '#e2e8f0' }}>
+                      <input type="checkbox" checked={form.grado_ids.includes(g.id)} onChange={() => handleGradoToggle(g.id)} style={{ margin: 0 }} />
+                      {g.nombre}
+                    </label>
+                  ))}
+                </div>
               </div>
               <div className="form-group">
                 <label className="form-label">Descripción</label>
@@ -180,7 +203,6 @@ export default function FormulariosPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

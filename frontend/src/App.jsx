@@ -5,6 +5,7 @@ import LoginPage from './pages/admin/LoginPage';
 import DashboardPage from './pages/admin/DashboardPage';
 import FormulariosPage from './pages/admin/FormulariosPage';
 import QRsPage from './pages/admin/QRsPage';
+import EventosPage from './pages/admin/EventosPage';
 import GradosPage from './pages/admin/GradosPage';
 import SeccionesPage from './pages/admin/SeccionesPage';
 import EstudiantesPage from './pages/admin/EstudiantesPage';
@@ -28,6 +29,7 @@ export default function App() {
         <Route index element={<DashboardPage />} />
         <Route path="formularios" element={<FormulariosPage />} />
         <Route path="qrs" element={<QRsPage />} />
+        <Route path="eventos" element={<EventosPage />} />
         <Route path="grados" element={<GradosPage />} />
         <Route path="secciones" element={<SeccionesPage />} />
         <Route path="estudiantes" element={<EstudiantesPage />} />

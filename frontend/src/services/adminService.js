@@ -151,3 +151,28 @@ export const descargarReporte = async (formato, params) => {
   });
   return response.data;
 };
+
+export const listarEventos = async () => {
+  const response = await api.get('/eventos');
+  return response.data;
+};
+
+export const obtenerEvento = async (id) => {
+  const response = await api.get(`/eventos/${id}`);
+  return response.data;
+};
+
+export const crearEvento = async (data) => {
+  const response = await api.post('/eventos', data);
+  return response.data;
+};
+
+export const actualizarEvento = async (id, data) => {
+  const response = await api.put(`/eventos/${id}`, data);
+  return response.data;
+};
+
+export const eliminarEvento = async (id) => {
+  const response = await api.delete(`/eventos/${id}`);
+  return response.data;
+};

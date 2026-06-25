@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { verificarQR, verificarDispositivo, registrarAsistencia } from '../../services/asistenciaService';
-import { listarSecciones, listarEstudiantes, listarGrados } from '../../services/adminService';
+import { listarSecciones, listarEstudiantes } from '../../services/adminService';
 import { obtenerDeviceId } from '../../hooks/useDeviceId';
 import { useGeolocation } from '../../hooks/useGeolocation';
 
@@ -63,7 +63,8 @@ function MensajeError({ mensaje }) {
 }
 
 function FormularioAsistencia({ formulario }) {
-  const [gradoNombre, setGradoNombre] = useState('');
+  const [grados, setGrados] = useState(formulario.grados || []);
+  const [gradoId, setGradoId] = useState('');
   const [secciones, setSecciones] = useState([]);
   const [estudiantes, setEstudiantes] = useState([]);
   const [seccionId, setSeccionId] = useState('');
@@ -75,19 +76,25 @@ function FormularioAsistencia({ formulario }) {
 
   useEffect(() => {
     solicitarUbicacion();
-    if (formulario.grado_id) {
-      listarSecciones({ grado_id: formulario.grado_id }).then(setSecciones).catch(() => {});
-      listarGrados().then((grados) => {
-        const g = grados.find((g) => g.id === formulario.grado_id);
-        if (g) setGradoNombre(g.nombre);
-      }).catch(() => {});
-    }
-  }, [formulario.grado_id]);
+  }, []);
 
-  const cargarEstudiantes = useCallback(async (seccionId) => {
-    if (formulario.grado_id && seccionId) {
+  const cargarSecciones = useCallback(async (gradoId) => {
+    if (gradoId) {
       try {
-        const data = await listarEstudiantes({ grado_id: formulario.grado_id, seccion_id: seccionId });
+        const data = await listarSecciones({ grado_id: gradoId });
+        setSecciones(data);
+      } catch {
+        setSecciones([]);
+      }
+    } else {
+      setSecciones([]);
+    }
+  }, []);
+
+  const cargarEstudiantes = useCallback(async (gradoId, seccionId) => {
+    if (gradoId && seccionId) {
+      try {
+        const data = await listarEstudiantes({ grado_id: gradoId, seccion_id: seccionId });
         setEstudiantes(data);
       } catch {
         setEstudiantes([]);
@@ -95,21 +102,31 @@ function FormularioAsistencia({ formulario }) {
     } else {
       setEstudiantes([]);
     }
-  }, [formulario.grado_id]);
+  }, []);
+
+  const handleGradoChange = (e) => {
+    const val = e.target.value;
+    setGradoId(val);
+    setSeccionId('');
+    setEstudianteId('');
+    setSecciones([]);
+    setEstudiantes([]);
+    if (val) cargarSecciones(val);
+  };
 
   const handleSeccionChange = (e) => {
     const val = e.target.value;
     setSeccionId(val);
     setEstudianteId('');
     setEstudiantes([]);
-    if (val) cargarEstudiantes(val);
+    if (gradoId && val) cargarEstudiantes(gradoId, val);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!seccionId || !estudianteId) {
+    if (!gradoId || !seccionId || !estudianteId) {
       setErrorMsg('Por favor, completa todos los campos.');
       return;
     }
@@ -140,7 +157,7 @@ function FormularioAsistencia({ formulario }) {
     try {
       await registrarAsistencia({
         formulario_id: formulario.id,
-        grado_id: formulario.grado_id,
+        grado_id: parseInt(gradoId),
         seccion_id: parseInt(seccionId),
         estudiante_id: parseInt(estudianteId),
         latitud: ubicacion?.latitud || null,
@@ -178,6 +195,11 @@ function FormularioAsistencia({ formulario }) {
 
   return (
     <PublicLayout>
+      {formulario.evento_logo && (
+        <div style={{ textAlign: 'center', marginBottom: 16 }}>
+          <img src={formulario.evento_logo} alt={formulario.evento} style={{ maxWidth: 200, maxHeight: 80, objectFit: 'contain' }} />
+        </div>
+      )}
       <h2>{formulario.nombre}</h2>
       {formulario.evento && <p className="subtitle">{formulario.evento}</p>}
       {!formulario.evento && <p className="subtitle">Registro de asistencia</p>}
@@ -187,23 +209,24 @@ function FormularioAsistencia({ formulario }) {
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label className="form-label">Grado</label>
-          <div className="form-input" style={{ background: '#f7fafc', cursor: 'default' }}>
-            {gradoNombre || 'Cargando...'}
-          </div>
+          <select className="form-input" value={gradoId} onChange={handleGradoChange} required>
+            <option value="">Seleccionar grado</option>
+            {grados.map((g) => <option key={g.id} value={g.id}>{g.nombre}</option>)}
+          </select>
         </div>
 
         <div className="form-group">
           <label className="form-label">Sección</label>
-          <select className="form-input" value={seccionId} onChange={handleSeccionChange} required>
-            <option value="">Seleccionar sección</option>
+          <select className="form-input" value={seccionId} onChange={handleSeccionChange} required disabled={!gradoId}>
+            <option value="">{gradoId ? 'Seleccionar sección' : 'Primero selecciona un grado'}</option>
             {secciones.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
           </select>
         </div>
 
         <div className="form-group">
           <label className="form-label">Nombre del Estudiante</label>
-          <select className="form-input" value={estudianteId} onChange={(e) => setEstudianteId(e.target.value)} required disabled={!seccionId}>
-            <option value="">{seccionId ? 'Seleccionar estudiante' : 'Primero selecciona una sección'}</option>
+          <select className="form-input" value={estudianteId} onChange={(e) => setEstudianteId(e.target.value)} required disabled={!gradoId || !seccionId}>
+            <option value="">{gradoId && seccionId ? 'Seleccionar estudiante' : 'Primero selecciona grado y sección'}</option>
             {estudiantes.map((e) => <option key={e.id} value={e.id}>{e.nombre_completo}</option>)}
           </select>
         </div>

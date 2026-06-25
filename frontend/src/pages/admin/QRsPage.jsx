@@ -74,6 +74,7 @@ export default function QRsPage() {
             <thead>
               <tr>
                 <th>Formulario</th>
+                <th>Grados</th>
                 <th>Código</th>
                 <th>Estado</th>
                 <th>URL de Acceso</th>
@@ -89,6 +90,7 @@ export default function QRsPage() {
                   return (
                     <tr key={qr.id}>
                       <td><strong>{qr.formulario_nombre}</strong></td>
+                      <td style={{ fontSize: 12 }}>{(qr.grados || []).join(', ') || '-'}</td>
                       <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{qr.codigo.substring(0, 16)}...</td>
                       <td>
                         <span className={`badge ${qr.activo ? 'badge-activo' : 'badge-inactivo'}`}>
