@@ -55,6 +55,11 @@ export const toggleActivoQR = async (id) => {
   return response.data;
 };
 
+export const actualizarConfigQR = async (id, config) => {
+  const response = await api.put(`/qr/${id}/config`, config);
+  return response.data;
+};
+
 export const listarGrados = async () => {
   const response = await api.get('/grados');
   return response.data;

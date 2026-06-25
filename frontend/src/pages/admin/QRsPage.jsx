@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { listarQRs, regenerarQR, toggleActivoQR } from '../../services/adminService';
+import { listarQRs, regenerarQR, toggleActivoQR, actualizarConfigQR } from '../../services/adminService';
+import QRCustomizer from '../../components/admin/QRCustomizer';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
@@ -7,6 +8,8 @@ export default function QRsPage() {
   const [qrs, setQrs] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [qrSeleccionado, setQrSeleccionado] = useState(null);
+  const [qrCustomizando, setQrCustomizando] = useState(false);
+  const [qrGuardando, setQrGuardando] = useState(false);
 
   const cargar = async () => {
     try {
@@ -31,6 +34,17 @@ export default function QRsPage() {
       await toggleActivoQR(id);
       await cargar();
     } catch { }
+  };
+
+  const handleGuardarConfig = async (config) => {
+    setQrGuardando(true);
+    try {
+      const actualizado = await actualizarConfigQR(qrSeleccionado.id, config);
+      setQrSeleccionado(actualizado);
+      setQrCustomizando(false);
+      await cargar();
+    } catch {}
+    setQrGuardando(false);
   };
 
   const descargarPNG = (codigo) => {
@@ -121,21 +135,34 @@ export default function QRsPage() {
 
       {qrSeleccionado && (
         <div className="modal-overlay" onClick={() => setQrSeleccionado(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
-            <h3 className="modal-title">{qrSeleccionado.formulario_nombre}</h3>
-            <div style={{ margin: '20px 0' }}>
-              <img
-                src={`${API_URL}/qr/imagen/${qrSeleccionado.codigo}`}
-                alt="QR"
-                style={{ maxWidth: 280, borderRadius: 8 }}
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center', maxWidth: qrCustomizando ? 560 : 500 }}>
+            {qrCustomizando ? (
+              <QRCustomizer
+                codigo={qrSeleccionado.codigo}
+                configActual={qrSeleccionado.config ? JSON.parse(qrSeleccionado.config) : null}
+                onGuardar={handleGuardarConfig}
+                guardando={qrGuardando}
               />
-            </div>
-            <p style={{ fontSize: 12, color: '#718096', wordBreak: 'break-all' }}>
-              {window.location.origin}/a/{qrSeleccionado.codigo}
-            </p>
-            <div className="modal-actions" style={{ justifyContent: 'center' }}>
-              <button className="btn btn-secondary" onClick={() => setQrSeleccionado(null)}>Cerrar</button>
-            </div>
+            ) : (
+              <>
+                <h3 className="modal-title">{qrSeleccionado.formulario_nombre}</h3>
+                <div style={{ margin: '20px 0' }}>
+                  <img
+                    src={`${API_URL}/qr/imagen/${qrSeleccionado.codigo}`}
+                    alt="QR"
+                    style={{ maxWidth: 280, borderRadius: 8 }}
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                </div>
+                <p style={{ fontSize: 12, color: '#718096', wordBreak: 'break-all' }}>
+                  {window.location.origin}/a/{qrSeleccionado.codigo}
+                </p>
+                <div className="modal-actions" style={{ justifyContent: 'center' }}>
+                  <button className="btn btn-secondary" onClick={() => setQrCustomizando(true)}>Personalizar</button>
+                  <button className="btn btn-secondary" onClick={() => setQrSeleccionado(null)}>Cerrar</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

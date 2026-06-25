@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import {
   listarFormularios, crearFormulario, actualizarFormulario,
-  eliminarFormulario, toggleEstadoFormulario, obtenerQRPorFormulario
+  eliminarFormulario, toggleEstadoFormulario, obtenerQRPorFormulario,
+  actualizarConfigQR
 } from '../../services/adminService';
+import QRCustomizer from '../../components/admin/QRCustomizer';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
@@ -17,6 +19,8 @@ export default function FormulariosPage() {
   const [error, setError] = useState('');
   const [qrModal, setQrModal] = useState(null);
   const [qrCargando, setQrCargando] = useState(false);
+  const [qrCustomizando, setQrCustomizando] = useState(false);
+  const [qrGuardando, setQrGuardando] = useState(false);
 
   const cargar = async () => {
     try {
@@ -85,11 +89,22 @@ export default function FormulariosPage() {
       setQrCargando(true);
       const qr = await obtenerQRPorFormulario(formularioId);
       setQrModal(qr);
+      setQrCustomizando(false);
     } catch {
       setQrModal({ error: true });
     } finally {
       setQrCargando(false);
     }
+  };
+
+  const handleGuardarConfig = async (config) => {
+    setQrGuardando(true);
+    try {
+      const actualizado = await actualizarConfigQR(qrModal.id, config);
+      setQrModal(actualizado);
+      setQrCustomizando(false);
+    } catch {}
+    setQrGuardando(false);
   };
 
   if (cargando) return <div className="loading">Cargando</div>;
@@ -191,23 +206,35 @@ export default function FormulariosPage() {
 
       {qrModal && (
         <div className="modal-overlay" onClick={() => setQrModal(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
-            <h3 className="modal-title">Código QR</h3>
-            {qrModal.error ? (
-              <div className="alert alert-error" style={{ margin: '20px 0' }}>No se encontró el QR. ¿Ya creaste el formulario?</div>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center', maxWidth: qrCustomizando ? 560 : 500 }}>
+            {qrCustomizando ? (
+              <QRCustomizer
+                codigo={qrModal.codigo}
+                configActual={qrModal.config ? JSON.parse(qrModal.config) : null}
+                onGuardar={handleGuardarConfig}
+                guardando={qrGuardando}
+              />
+            ) : qrModal.error ? (
+              <>
+                <div className="alert alert-error" style={{ margin: '20px 0' }}>No se encontró el QR. ¿Ya creaste el formulario?</div>
+                <button className="btn btn-secondary" onClick={() => setQrModal(null)}>Cerrar</button>
+              </>
             ) : (
               <>
+                <h3 className="modal-title">Código QR</h3>
                 <div style={{ margin: '20px 0' }}>
-                  <img src={`${API_URL}/qr/imagen/${qrModal.codigo}`} alt="QR" style={{ maxWidth: 280, borderRadius: 8 }} />
+                  <img src={`${API_URL}/qr/imagen/${qrModal.codigo}`} alt="QR" style={{ maxWidth: 280, borderRadius: 8 }}
+                    onError={(e) => { e.target.style.display = 'none'; }} />
                 </div>
                 <p style={{ fontSize: 12, color: '#718096', wordBreak: 'break-all' }}>
                   {window.location.origin}/a/{qrModal.codigo}
                 </p>
+                <div className="modal-actions" style={{ justifyContent: 'center' }}>
+                  <button className="btn btn-secondary" onClick={() => setQrCustomizando(true)}>Personalizar</button>
+                  <button className="btn btn-secondary" onClick={() => setQrModal(null)}>Cerrar</button>
+                </div>
               </>
             )}
-            <div className="modal-actions" style={{ justifyContent: 'center' }}>
-              <button className="btn btn-secondary" onClick={() => setQrModal(null)}>Cerrar</button>
-            </div>
           </div>
         </div>
       )}
