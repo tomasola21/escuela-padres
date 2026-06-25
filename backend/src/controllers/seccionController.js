@@ -1,7 +1,24 @@
 const pool = require('../config/database');
 
+const seccionesPorDefecto = ['A', 'B', 'C'];
+
+const sembrarSecciones = async () => {
+  try {
+    const [existentes] = await pool.query('SELECT COUNT(*) as total FROM secciones');
+    if (existentes[0].total === 0) {
+      for (const nombre of seccionesPorDefecto) {
+        await pool.query('INSERT INTO secciones (nombre) VALUES (?)', [nombre]);
+      }
+      console.log('Secciones por defecto insertadas:', seccionesPorDefecto.length);
+    }
+  } catch (error) {
+    console.error('Error al sembrar secciones:', error);
+  }
+};
+
 const listar = async (req, res) => {
   try {
+    await sembrarSecciones();
     const [secciones] = await pool.query('SELECT * FROM secciones ORDER BY nombre ASC');
     res.json(secciones);
   } catch (error) {
