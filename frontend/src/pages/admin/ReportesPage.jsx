@@ -11,6 +11,8 @@ export default function ReportesPage() {
     fecha_desde: '', fecha_hasta: '', busqueda: ''
   });
 
+  const [formularioSel, setFormularioSel] = useState(null);
+
   useEffect(() => {
     Promise.all([
       listarFormularios().then(setFormularios).catch(() => {}),
@@ -18,6 +20,17 @@ export default function ReportesPage() {
       listarSecciones().then(setSecciones).catch(() => {})
     ]).finally(() => setCargando(false));
   }, []);
+
+  const handleFormularioChange = (e) => {
+    const val = e.target.value;
+    setFiltros(prev => ({ ...prev, formulario_id: val, grado_id: '', seccion_id: '' }));
+    const sel = formularios.find(f => f.id === parseInt(val));
+    setFormularioSel(sel || null);
+  };
+
+  const gradosFiltrados = formularioSel?.grados?.length
+    ? grados.filter(g => formularioSel.grados.some(fg => fg.id === g.id))
+    : grados;
 
   const exportar = async (formato) => {
     try {
@@ -62,7 +75,7 @@ export default function ReportesPage() {
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ minWidth: 200, margin: 0 }}>
             <label className="form-label">Formulario</label>
-            <select className="form-input" value={filtros.formulario_id} onChange={(e) => setFiltros({ ...filtros, formulario_id: e.target.value })}>
+            <select className="form-input" value={filtros.formulario_id} onChange={handleFormularioChange}>
               <option value="">Todos</option>
               {formularios.map((f) => <option key={f.id} value={f.id}>{f.nombre}</option>)}
             </select>
@@ -71,7 +84,7 @@ export default function ReportesPage() {
             <label className="form-label">Grado</label>
             <select className="form-input" value={filtros.grado_id} onChange={(e) => setFiltros({ ...filtros, grado_id: e.target.value })}>
               <option value="">Todos</option>
-              {grados.map((g) => <option key={g.id} value={g.id}>{g.nombre}</option>)}
+              {gradosFiltrados.map((g) => <option key={g.id} value={g.id}>{g.nombre}</option>)}
             </select>
           </div>
           <div className="form-group" style={{ minWidth: 150, margin: 0 }}>

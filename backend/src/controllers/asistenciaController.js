@@ -55,9 +55,10 @@ const listar = async (req, res) => {
     const { formulario_id, grado_id, seccion_id, estudiante_id, fecha_desde, fecha_hasta } = req.query;
 
     let query = `
-      SELECT a.*, f.nombre as formulario_nombre, f.evento, g.nombre as grado_nombre, s.nombre as seccion_nombre, e.nombre_completo as estudiante_nombre, e.codigo as estudiante_codigo
+      SELECT a.*, f.nombre as formulario_nombre, ev.nombre as evento_nombre, g.nombre as grado_nombre, s.nombre as seccion_nombre, e.nombre_completo as estudiante_nombre, e.codigo as estudiante_codigo
       FROM asistencias a
       JOIN formularios f ON a.formulario_id = f.id
+      LEFT JOIN eventos ev ON f.evento_id = ev.id
       JOIN grados g ON a.grado_id = g.id
       JOIN secciones s ON a.seccion_id = s.id
       JOIN estudiantes e ON a.estudiante_id = e.id

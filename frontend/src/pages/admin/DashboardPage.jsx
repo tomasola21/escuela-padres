@@ -25,6 +25,11 @@ export default function DashboardPage() {
     listarGrados().then(setGrados).catch(() => {});
   }, []);
 
+  const formularioSel = formularios.find(f => f.id === parseInt(filtroFormulario));
+  const gradosFiltrados = filtroFormulario && formularioSel?.grados?.length
+    ? grados.filter(g => formularioSel.grados.some(fg => fg.id === g.id))
+    : grados;
+
   const cargarSecciones = useCallback(async (gradoId) => {
     if (gradoId) {
       try {
@@ -49,6 +54,14 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => { cargar(); }, [cargar]);
+
+  const handleFormularioChange = (e) => {
+    const val = e.target.value;
+    setFiltroFormulario(val);
+    setFiltroGrado('');
+    setFiltroSeccion('');
+    setSecciones([]);
+  };
 
   const aplicarFiltros = () => {
     cargar({
@@ -83,8 +96,7 @@ export default function DashboardPage() {
   const stats = data ? [
     { label: 'Total Formularios', value: data.totalFormularios },
     { label: 'Registros Filtrados', value: data.totalRegistros },
-    { label: 'Total Grados', value: data.totalGrados },
-    { label: 'Total Secciones', value: data.totalSecciones },
+    { label: 'Participación', value: data.totalEstudiantes > 0 ? Math.round(data.totalRegistros / data.totalEstudiantes * 100) + '%' : '0%' },
     { label: 'Total Estudiantes', value: data.totalEstudiantes },
     { label: 'Formularios Activos', value: data.formulariosActivos },
     { label: 'Formularios Inactivos', value: data.formulariosInactivos }
@@ -152,7 +164,7 @@ export default function DashboardPage() {
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'end' }}>
           <div className="form-group" style={{ flex: '1 1 180px', marginBottom: 0 }}>
             <label className="form-label">Formulario</label>
-            <select className="form-input" value={filtroFormulario} onChange={(e) => setFiltroFormulario(e.target.value)}>
+            <select className="form-input" value={filtroFormulario} onChange={handleFormularioChange}>
               <option value="">Todos</option>
               {formularios.map(f => <option key={f.id} value={f.id}>{f.nombre}</option>)}
             </select>
@@ -161,7 +173,7 @@ export default function DashboardPage() {
             <label className="form-label">Grado</label>
             <select className="form-input" value={filtroGrado} onChange={handleGradoChange}>
               <option value="">Todos</option>
-              {grados.map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
+              {gradosFiltrados.map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
             </select>
           </div>
           <div className="form-group" style={{ flex: '1 1 100px', marginBottom: 0 }}>
@@ -239,6 +251,8 @@ export default function DashboardPage() {
                       <th>Grado</th>
                       <th>Sección</th>
                       <th>Formulario</th>
+                      <th>Evento</th>
+                      <th>Registrado por</th>
                       <th>Fecha</th>
                     </tr>
                   </thead>
@@ -249,6 +263,8 @@ export default function DashboardPage() {
                         <td>{r.grado_nombre}</td>
                         <td>{r.seccion_nombre}</td>
                         <td>{r.formulario_nombre}</td>
+                        <td>{r.evento_nombre || '-'}</td>
+                        <td>{r.registrado_por || '-'}</td>
                         <td>{new Date(r.fecha_registro).toLocaleString('es-PE')}</td>
                       </tr>
                     ))}

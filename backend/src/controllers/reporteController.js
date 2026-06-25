@@ -7,11 +7,12 @@ const generarReporte = async (req, res) => {
     const { formato, formulario_id, grado_id, seccion_id, estudiante_id, fecha_desde, fecha_hasta } = req.query;
 
     let query = `
-      SELECT a.id, f.nombre as formulario, f.evento, g.nombre as grado, s.nombre as seccion,
+      SELECT a.id, f.nombre as formulario, ev.nombre as evento, g.nombre as grado, s.nombre as seccion,
              e.nombre_completo as estudiante, e.codigo, a.latitud, a.longitud, a.navegador,
-             a.fecha_registro, a.device_id
+             a.fecha_registro, a.device_id, a.registrado_por
       FROM asistencias a
       JOIN formularios f ON a.formulario_id = f.id
+      LEFT JOIN eventos ev ON f.evento_id = ev.id
       JOIN grados g ON a.grado_id = g.id
       JOIN secciones s ON a.seccion_id = s.id
       JOIN estudiantes e ON a.estudiante_id = e.id
@@ -158,9 +159,10 @@ const dashboard = async (req, res) => {
     );
 
     const [recientes] = await pool.query(
-      `SELECT a.*, f.nombre as formulario_nombre, g.nombre as grado_nombre, s.nombre as seccion_nombre, e.nombre_completo as estudiante_nombre
+      `SELECT a.*, f.nombre as formulario_nombre, ev.nombre as evento_nombre, g.nombre as grado_nombre, s.nombre as seccion_nombre, e.nombre_completo as estudiante_nombre
        FROM asistencias a
        JOIN formularios f ON a.formulario_id = f.id
+       LEFT JOIN eventos ev ON f.evento_id = ev.id
        JOIN grados g ON a.grado_id = g.id
        JOIN secciones s ON a.seccion_id = s.id
        JOIN estudiantes e ON a.estudiante_id = e.id
