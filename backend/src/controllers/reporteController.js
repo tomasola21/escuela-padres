@@ -45,58 +45,61 @@ const generarReporte = async (req, res) => {
       doc.fontSize(10).font('Helvetica').text(`Generado: ${new Date().toLocaleDateString('es-PE')}`, { align: 'center' });
       doc.moveDown(1.5);
 
-      const headers = ['#', 'Taller', 'Evento', 'Grado', 'Sección', 'Estudiante', 'Fecha', 'Navegador'];
-      const widths = [20, 60, 50, 40, 30, 80, 60, 50];
+      const headers = ['#', 'Estudiante', 'Código', 'Taller', 'Evento', 'Grado', 'Sección', 'Registrado por', 'Navegador', 'Fecha'];
+      const widths = [18, 80, 45, 55, 40, 30, 25, 40, 40, 55];
       const tableTop = doc.y;
 
-      doc.fontSize(7).font('Helvetica-Bold');
+      doc.fontSize(6.5).font('Helvetica-Bold');
       let x = 30;
       headers.forEach((h, i) => {
         doc.text(h, x, tableTop, { width: widths[i], align: 'left' });
         x += widths[i];
       });
 
-      doc.moveDown(0.3);
+      doc.moveDown(0.2);
       doc.fontSize(6).font('Helvetica');
 
       asistencias.forEach((a, idx) => {
         const y = doc.y;
-        if (y > 750) {
+        if (y > 745) {
           doc.addPage();
         }
         x = 30;
         const row = [
           (idx + 1).toString(),
+          a.estudiante || '',
+          a.codigo || '',
           a.formulario || '',
           a.evento || '',
           a.grado || '',
           a.seccion || '',
-          a.estudiante || '',
-          new Date(a.fecha_registro).toLocaleString('es-PE'),
-          a.navegador || ''
+          a.registrado_por || '',
+          a.navegador || '',
+          new Date(a.fecha_registro).toLocaleString('es-PE')
         ];
         row.forEach((val, i) => {
           doc.text(val, x, doc.y, { width: widths[i], align: 'left' });
           x += widths[i];
         });
-        doc.moveDown(0.2);
+        doc.moveDown(0.15);
       });
 
       doc.end();
     } else if (formato === 'xlsx' || formato === 'excel') {
       const data = asistencias.map(a => ({
-        ID: a.id,
+        '#': a.id,
+        Estudiante: a.estudiante,
+        Código: a.codigo,
         Taller: a.formulario,
         Evento: a.evento,
         Grado: a.grado,
         Sección: a.seccion,
-        Estudiante: a.estudiante,
-        Código: a.codigo,
-        Latitud: a.latitud,
-        Longitud: a.longitud,
+        'Registrado por': a.registrado_por,
         Navegador: a.navegador,
         'Fecha Registro': new Date(a.fecha_registro).toLocaleString('es-PE'),
-        'Device ID': a.device_id
+        'Device ID': a.device_id,
+        Latitud: a.latitud,
+        Longitud: a.longitud
       }));
 
       const wb = XLSX.utils.book_new();
@@ -111,30 +114,31 @@ const generarReporte = async (req, res) => {
       const rows = asistencias.map((a, i) => `
         <tr>
           <td>${i + 1}</td>
+          <td>${a.estudiante || ''}</td>
+          <td>${a.codigo || ''}</td>
           <td>${a.formulario || ''}</td>
           <td>${a.evento || ''}</td>
           <td>${a.grado || ''}</td>
           <td>${a.seccion || ''}</td>
-          <td>${a.estudiante || ''}</td>
-          <td>${a.codigo || ''}</td>
           <td>${a.registrado_por || ''}</td>
+          <td>${a.navegador || ''}</td>
           <td>${new Date(a.fecha_registro).toLocaleString('es-PE')}</td>
         </tr>`).join('');
 
       const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Reporte de Asistencias</title>
-<style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:40px}
-h1{text-align:center;color:#1a365d;font-size:18pt}
-.sub{text-align:center;color:#666;font-size:10pt;margin-bottom:20px}
-table{width:100%;border-collapse:collapse;margin-top:16px}
-th{background:#1a365d;color:#fff;padding:8px 6px;font-size:9pt;text-align:left}
-td{border:1px solid #ccc;padding:6px;font-size:9pt}
+<style>body{font-family:Calibri,Arial,sans-serif;font-size:10pt;margin:30px}
+h1{text-align:center;color:#1a365d;font-size:16pt}
+.sub{text-align:center;color:#666;font-size:9pt;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th{background:#1a365d;color:#fff;padding:6px 5px;font-size:8pt;text-align:left;white-space:nowrap}
+td{border:1px solid #bbb;padding:4px 5px;font-size:8pt}
 tr:nth-child(even){background:#f5f7fa}
 </style></head><body>
 <h1>Reporte de Asistencias</h1>
 <p class="sub">Generado: ${new Date().toLocaleDateString('es-PE')} | Total: ${asistencias.length} registros</p>
 <table><thead><tr>
-<th>#</th><th>Taller</th><th>Evento</th><th>Grado</th><th>Sección</th><th>Estudiante</th><th>Código</th><th>Registrado por</th><th>Fecha</th>
+<th>#</th><th>Estudiante</th><th>Código</th><th>Taller</th><th>Evento</th><th>Grado</th><th>Sección</th><th>Registrado por</th><th>Navegador</th><th>Fecha</th>
 </tr></thead><tbody>${rows}</tbody></table></body></html>`;
 
       res.setHeader('Content-Type', 'application/msword');
