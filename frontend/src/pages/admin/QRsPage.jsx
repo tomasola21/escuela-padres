@@ -103,7 +103,7 @@ export default function QRsPage() {
                         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                           <button className="btn btn-primary btn-sm" onClick={() => setQrSeleccionado(qr)}>Ver QR</button>
                           <button className="btn btn-success btn-sm" onClick={() => descargarPNG(qr.codigo)}>PNG</button>
-                          <button className="btn btn-warning btn-sm" onClick={() => descargarPDF(qr.codigo, qr.formulario_nombre)}>PDF</button>
+                          <button className="btn btn-warning btn-sm" onClick={() => descargarPDF(qr.codigo, qr.formulario_nombre)}>Descargar PNG</button>
                           <button className="btn btn-secondary btn-sm" onClick={() => handleRegenerar(qr.formulario_id)}>Regenerar</button>
                           <button className="btn btn-sm" style={{ background: qr.activo ? '#fefcbf' : '#c6f6d5', color: qr.activo ? '#744210' : '#22543d' }} onClick={() => handleToggle(qr.id)}>
                             {qr.activo ? 'Desactivar' : 'Activar'}

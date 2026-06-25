@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import {
   listarFormularios, crearFormulario, actualizarFormulario,
-  eliminarFormulario, toggleEstadoFormulario
+  eliminarFormulario, toggleEstadoFormulario, obtenerQRPorFormulario
 } from '../../services/adminService';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 const initialForm = { nombre: '', descripcion: '', evento: '', fecha_inicio: '', fecha_cierre: '', estado: 'activo' };
 
@@ -13,6 +15,8 @@ export default function FormulariosPage() {
   const [form, setForm] = useState(initialForm);
   const [editandoId, setEditandoId] = useState(null);
   const [error, setError] = useState('');
+  const [qrModal, setQrModal] = useState(null);
+  const [qrCargando, setQrCargando] = useState(false);
 
   const cargar = async () => {
     try {
@@ -76,6 +80,18 @@ export default function FormulariosPage() {
     } catch { }
   };
 
+  const handleVerQR = async (formularioId) => {
+    try {
+      setQrCargando(true);
+      const qr = await obtenerQRPorFormulario(formularioId);
+      setQrModal(qr);
+    } catch {
+      setQrModal({ error: true });
+    } finally {
+      setQrCargando(false);
+    }
+  };
+
   if (cargando) return <div className="loading">Cargando</div>;
 
   return (
@@ -115,8 +131,8 @@ export default function FormulariosPage() {
                       </span>
                     </td>
                     <td>
-                      <button className="btn btn-primary btn-sm" onClick={() => window.open(`/admin/qrs`, '_blank')}>
-                        Ver QR
+                      <button className="btn btn-primary btn-sm" onClick={() => handleVerQR(f.id)} disabled={qrCargando}>
+                        {qrCargando ? '...' : 'Ver QR'}
                       </button>
                     </td>
                     <td>
@@ -169,6 +185,29 @@ export default function FormulariosPage() {
                 <button type="submit" className="btn btn-primary">{editandoId ? 'Actualizar' : 'Crear'}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {qrModal && (
+        <div className="modal-overlay" onClick={() => setQrModal(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
+            <h3 className="modal-title">Código QR</h3>
+            {qrModal.error ? (
+              <div className="alert alert-error" style={{ margin: '20px 0' }}>No se encontró el QR. ¿Ya creaste el formulario?</div>
+            ) : (
+              <>
+                <div style={{ margin: '20px 0' }}>
+                  <img src={`${API_URL}/qr/imagen/${qrModal.codigo}`} alt="QR" style={{ maxWidth: 280, borderRadius: 8 }} />
+                </div>
+                <p style={{ fontSize: 12, color: '#718096', wordBreak: 'break-all' }}>
+                  {window.location.origin}/a/{qrModal.codigo}
+                </p>
+              </>
+            )}
+            <div className="modal-actions" style={{ justifyContent: 'center' }}>
+              <button className="btn btn-secondary" onClick={() => setQrModal(null)}>Cerrar</button>
+            </div>
           </div>
         </div>
       )}
