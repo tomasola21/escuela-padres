@@ -117,36 +117,57 @@ const generarReporte = async (req, res) => {
 
 const dashboard = async (req, res) => {
   try {
+    const { formulario_id, grado_id, seccion_id, fecha_desde, fecha_hasta } = req.query;
+
+    const where = [];
+    const params = [];
+    if (formulario_id) { where.push('a.formulario_id = ?'); params.push(formulario_id); }
+    if (grado_id) { where.push('a.grado_id = ?'); params.push(grado_id); }
+    if (seccion_id) { where.push('a.seccion_id = ?'); params.push(seccion_id); }
+    if (fecha_desde) { where.push('a.fecha_registro >= ?'); params.push(fecha_desde); }
+    if (fecha_hasta) { where.push('a.fecha_registro <= ?'); params.push(fecha_hasta + ' 23:59:59'); }
+    const whereStr = where.length > 0 ? ' WHERE ' + where.join(' AND ') : '';
+
     const [totalFormularios] = await pool.query('SELECT COUNT(*) as total FROM formularios');
-    const [totalRegistros] = await pool.query('SELECT COUNT(*) as total FROM asistencias');
     const [totalGrados] = await pool.query('SELECT COUNT(*) as total FROM grados');
     const [totalSecciones] = await pool.query('SELECT COUNT(*) as total FROM secciones');
     const [totalEstudiantes] = await pool.query('SELECT COUNT(*) as total FROM estudiantes');
+
+    const [totalRegistros] = await pool.query('SELECT COUNT(*) as total FROM asistencias a' + whereStr, params);
     const [formulariosActivos] = await pool.query("SELECT COUNT(*) as total FROM formularios WHERE estado = 'activo'");
     const [formulariosInactivos] = await pool.query("SELECT COUNT(*) as total FROM formularios WHERE estado = 'inactivo'");
 
     const [asistenciasPorGrado] = await pool.query(
-      `SELECT g.nombre, COUNT(*) as total 
-       FROM asistencias a 
-       JOIN grados g ON a.grado_id = g.id 
-       GROUP BY g.id, g.nombre 
-       ORDER BY total DESC`
+      `SELECT g.nombre, COUNT(*) as total FROM asistencias a JOIN grados g ON a.grado_id = g.id${whereStr} GROUP BY g.id, g.nombre ORDER BY total DESC`,
+      params
+    );
+
+    const [asistenciasPorSeccion] = await pool.query(
+      `SELECT s.nombre, COUNT(*) as total FROM asistencias a JOIN secciones s ON a.seccion_id = s.id${whereStr} GROUP BY s.id, s.nombre ORDER BY total DESC`,
+      params
     );
 
     const [asistenciasPorFormulario] = await pool.query(
-      `SELECT f.nombre, COUNT(*) as total 
-       FROM asistencias a 
-       JOIN formularios f ON a.formulario_id = f.id 
-       GROUP BY f.id, f.nombre 
-       ORDER BY total DESC`
+      `SELECT f.nombre, COUNT(*) as total FROM asistencias a JOIN formularios f ON a.formulario_id = f.id${whereStr} GROUP BY f.id, f.nombre ORDER BY total DESC`,
+      params
     );
 
     const [asistenciasPorFecha] = await pool.query(
-      `SELECT DATE(fecha_registro) as fecha, COUNT(*) as total 
-       FROM asistencias 
-       GROUP BY DATE(fecha_registro) 
-       ORDER BY fecha ASC 
-       LIMIT 30`
+      `SELECT DATE(a.fecha_registro) as fecha, COUNT(*) as total FROM asistencias a${whereStr} GROUP BY DATE(a.fecha_registro) ORDER BY fecha ASC`,
+      params
+    );
+
+    const [recientes] = await pool.query(
+      `SELECT a.*, f.nombre as formulario_nombre, g.nombre as grado_nombre, s.nombre as seccion_nombre, e.nombre_completo as estudiante_nombre
+       FROM asistencias a
+       JOIN formularios f ON a.formulario_id = f.id
+       JOIN grados g ON a.grado_id = g.id
+       JOIN secciones s ON a.seccion_id = s.id
+       JOIN estudiantes e ON a.estudiante_id = e.id
+       ${whereStr}
+       ORDER BY a.fecha_registro DESC
+       LIMIT 10`,
+      params
     );
 
     res.json({
@@ -158,8 +179,10 @@ const dashboard = async (req, res) => {
       formulariosActivos: formulariosActivos[0].total,
       formulariosInactivos: formulariosInactivos[0].total,
       asistenciasPorGrado,
+      asistenciasPorSeccion,
       asistenciasPorFormulario,
-      asistenciasPorFecha
+      asistenciasPorFecha,
+      recientes
     });
   } catch (error) {
     console.error('Error al obtener dashboard:', error);

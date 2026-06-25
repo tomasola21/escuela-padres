@@ -1,7 +1,7 @@
 import api from './api';
 
-export const obtenerDashboard = async () => {
-  const response = await api.get('/reportes/dashboard');
+export const obtenerDashboard = async (queryString = '') => {
+  const response = await api.get(`/reportes/dashboard${queryString ? '?' + queryString : ''}`);
   return response.data;
 };
 
@@ -75,8 +75,8 @@ export const eliminarGrado = async (id) => {
   return response.data;
 };
 
-export const listarSecciones = async () => {
-  const response = await api.get('/secciones');
+export const listarSecciones = async (params = {}) => {
+  const response = await api.get('/secciones', { params });
   return response.data;
 };
 
