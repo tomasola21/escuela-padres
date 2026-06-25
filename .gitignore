@@ -1,0 +1,11 @@
+node_modules/
+.env
+*.log
+dist/
+.DS_Store
+*.tar.gz
+test-db.js
+create-db.js
+check-db.js
+update-password.js
+deploy-backend.ps1
