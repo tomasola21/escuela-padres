@@ -47,6 +47,7 @@ async function run() {
       let currentGradoId = null;
       let currentSeccionLetra = '';
       let values = [];
+      let contador = 0;
 
       for (let i = 0; i < data.length; i++) {
         const row = data[i];
@@ -61,6 +62,7 @@ async function run() {
           currentSeccion = seccionDb[header.seccion];
           currentGradoId = gradoDb[gradeMap[sheetName].db];
           values = [];
+          contador = 0;
           continue;
         }
 
@@ -69,10 +71,8 @@ async function run() {
         const nombre = String(row[1]).trim();
         if (!nombre) continue;
 
-        const num = row[0] != null ? parseInt(row[0]) : null;
-        if (num == null || isNaN(num) || num < 1) continue;
-
-        const codigo = `${sheetName}${currentSeccionLetra}${String(num).padStart(3, '0')}`;
+        contador++;
+        const codigo = `${sheetName}${currentSeccionLetra}${String(contador).padStart(3, '0')}`;
         values.push([codigo, nombre, currentGradoId, currentSeccion]);
       }
 
