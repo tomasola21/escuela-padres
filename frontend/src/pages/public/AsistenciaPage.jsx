@@ -9,6 +9,7 @@ export default function AsistenciaPage() {
   const { codigo } = useParams();
   const [qrValido, setQrValido] = useState(null);
   const [formulario, setFormulario] = useState(null);
+  const [qrId, setQrId] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
@@ -18,6 +19,7 @@ export default function AsistenciaPage() {
         if (data.disponible) {
           setQrValido(true);
           setFormulario(data.formulario);
+          setQrId(data.qr_id);
         } else {
           setQrValido(false);
         }
@@ -33,7 +35,7 @@ export default function AsistenciaPage() {
   if (cargando) return <PublicLayout><div className="loading">Verificando QR</div></PublicLayout>;
   if (!qrValido) return <PublicLayout><MensajeError mensaje={error || 'Este formulario no se encuentra disponible.'} /></PublicLayout>;
 
-  return <FormularioAsistencia formulario={formulario} />;
+  return <FormularioAsistencia formulario={formulario} qrId={qrId} />;
 }
 
 function PublicLayout({ children }) {
@@ -62,7 +64,7 @@ function MensajeError({ mensaje }) {
   );
 }
 
-function FormularioAsistencia({ formulario }) {
+function FormularioAsistencia({ formulario, qrId }) {
   const [grados, setGrados] = useState(formulario.grados || []);
   const [gradoId, setGradoId] = useState('');
   const [secciones, setSecciones] = useState([]);
@@ -157,6 +159,7 @@ function FormularioAsistencia({ formulario }) {
     try {
       await registrarAsistencia({
         formulario_id: formulario.id,
+        qr_id: qrId,
         grado_id: parseInt(gradoId),
         seccion_id: parseInt(seccionId),
         estudiante_id: parseInt(estudianteId),

@@ -45,6 +45,11 @@ export const obtenerQRPorFormulario = async (formularioId) => {
   return response.data;
 };
 
+export const crearQR = async (data) => {
+  const response = await api.post('/qr', data);
+  return response.data;
+};
+
 export const regenerarQR = async (formularioId) => {
   const response = await api.post(`/qr/${formularioId}/regenerar`);
   return response.data;

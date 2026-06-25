@@ -28,6 +28,9 @@ CREATE TABLE qrs (
   formulario_id INT NOT NULL,
   codigo VARCHAR(255) NOT NULL UNIQUE,
   activo TINYINT(1) DEFAULT 1,
+  fecha_inicio DATE NULL,
+  fecha_cierre DATE NULL,
+  config TEXT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (formulario_id) REFERENCES formularios(id) ON DELETE CASCADE
 );
@@ -59,6 +62,7 @@ CREATE TABLE estudiantes (
 CREATE TABLE asistencias (
   id INT AUTO_INCREMENT PRIMARY KEY,
   formulario_id INT NOT NULL,
+  qr_id INT NULL,
   grado_id INT NOT NULL,
   seccion_id INT NOT NULL,
   estudiante_id INT NOT NULL,
@@ -69,6 +73,7 @@ CREATE TABLE asistencias (
   fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (formulario_id) REFERENCES formularios(id) ON DELETE CASCADE,
+  FOREIGN KEY (qr_id) REFERENCES qrs(id) ON DELETE SET NULL,
   FOREIGN KEY (grado_id) REFERENCES grados(id) ON DELETE CASCADE,
   FOREIGN KEY (seccion_id) REFERENCES secciones(id) ON DELETE CASCADE,
   FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE

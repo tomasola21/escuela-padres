@@ -47,6 +47,30 @@ const obtenerPorFormulario = async (req, res) => {
   }
 };
 
+const crear = async (req, res) => {
+  try {
+    const { formulario_id, fecha_inicio, fecha_cierre } = req.body;
+
+    const [formularios] = await pool.query('SELECT * FROM formularios WHERE id = ?', [formulario_id]);
+    if (formularios.length === 0) return res.status(404).json({ mensaje: 'Formulario no encontrado.' });
+
+    const [existentes] = await pool.query('SELECT id FROM qrs WHERE formulario_id = ?', [formulario_id]);
+    if (existentes.length > 0) return res.status(400).json({ mensaje: 'Este formulario ya tiene un código QR.' });
+
+    const codigo = require('crypto').randomBytes(16).toString('hex');
+    const [resultado] = await pool.query(
+      'INSERT INTO qrs (formulario_id, codigo, fecha_inicio, fecha_cierre) VALUES (?, ?, ?, ?)',
+      [formulario_id, codigo, fecha_inicio || null, fecha_cierre || null]
+    );
+
+    const [qr] = await pool.query('SELECT * FROM qrs WHERE id = ?', [resultado.insertId]);
+    res.status(201).json(qr[0]);
+  } catch (error) {
+    console.error('Error al crear QR:', error);
+    res.status(500).json({ mensaje: 'Error del servidor.' });
+  }
+};
+
 const regenerar = async (req, res) => {
   try {
     const { formulario_id } = req.params;
@@ -135,6 +159,7 @@ const verificarQR = async (req, res) => {
 
     res.json({
       disponible: true,
+      qr_id: qr.id,
       formulario: {
         id: qr.formulario_id,
         nombre: qr.formulario_nombre,
@@ -151,4 +176,4 @@ const verificarQR = async (req, res) => {
   }
 };
 
-module.exports = { listar, obtenerPorFormulario, regenerar, toggleActivo, generarQRImage, verificarQR };
+module.exports = { listar, obtenerPorFormulario, crear, regenerar, toggleActivo, generarQRImage, verificarQR };

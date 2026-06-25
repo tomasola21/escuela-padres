@@ -1,21 +1,35 @@
 import { useState, useEffect } from 'react';
-import { listarQRs, regenerarQR, toggleActivoQR } from '../../services/adminService';
+import { listarQRs, listarFormularios, crearQR, regenerarQR, toggleActivoQR } from '../../services/adminService';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 export default function QRsPage() {
   const [qrs, setQrs] = useState([]);
+  const [formularios, setFormularios] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [nuevoQR, setNuevoQR] = useState({ formulario_id: '', fecha_inicio: '', fecha_cierre: '' });
 
   const cargar = async () => {
     try {
-      const data = await listarQRs();
+      const [data, forms] = await Promise.all([listarQRs(), listarFormularios()]);
       setQrs(data);
+      setFormularios(forms);
     } catch { }
     setCargando(false);
   };
 
   useEffect(() => { cargar(); }, []);
+
+  const handleCrearQR = async (e) => {
+    e.preventDefault();
+    try {
+      await crearQR(nuevoQR);
+      setMostrarModal(false);
+      setNuevoQR({ formulario_id: '', fecha_inicio: '', fecha_cierre: '' });
+      await cargar();
+    } catch { }
+  };
 
   const handleRegenerar = async (formularioId) => {
     if (!confirm('¿Regenerar código QR? El anterior dejará de funcionar.')) return;
@@ -66,7 +80,39 @@ export default function QRsPage() {
     <div>
       <div className="page-header">
         <h2 className="page-title" style={{ margin: 0 }}>Códigos QR</h2>
+        <button className="btn btn-primary" onClick={() => setMostrarModal(true)}>Crear QR</button>
       </div>
+
+      {mostrarModal && (
+        <div className="modal-overlay" onClick={() => setMostrarModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title">Crear nuevo código QR</h3>
+            <form onSubmit={handleCrearQR}>
+              <div className="form-group">
+                <label className="form-label">Formulario</label>
+                <select className="form-input" value={nuevoQR.formulario_id} onChange={(e) => setNuevoQR({ ...nuevoQR, formulario_id: e.target.value })} required>
+                  <option value="">Seleccionar formulario</option>
+                  {formularios.filter((f) => !qrs.some((q) => q.formulario_id === f.id)).map((f) => (
+                    <option key={f.id} value={f.id}>{f.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Fecha de inicio <span style={{ fontWeight: 400, color: '#718096' }}>(opcional)</span></label>
+                <input type="date" className="form-input" value={nuevoQR.fecha_inicio} onChange={(e) => setNuevoQR({ ...nuevoQR, fecha_inicio: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Fecha de cierre <span style={{ fontWeight: 400, color: '#718096' }}>(opcional)</span></label>
+                <input type="date" className="form-input" value={nuevoQR.fecha_cierre} onChange={(e) => setNuevoQR({ ...nuevoQR, fecha_cierre: e.target.value })} />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setMostrarModal(false)}>Cancelar</button>
+                <button type="submit" className="btn btn-primary">Crear QR</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <div className="table-container">
@@ -76,6 +122,7 @@ export default function QRsPage() {
                 <th>Formulario</th>
                 <th>Grados</th>
                 <th>Código</th>
+                <th>Vigencia</th>
                 <th>Estado</th>
                 <th>URL de Acceso</th>
                 <th>Acciones</th>
@@ -83,7 +130,7 @@ export default function QRsPage() {
             </thead>
             <tbody>
               {qrs.length === 0 ? (
-                <tr><td colSpan={5} className="empty-state">No hay códigos QR generados</td></tr>
+                <tr><td colSpan={7} className="empty-state">No hay códigos QR generados</td></tr>
               ) : (
                 qrs.map((qr) => {
                   const url = `${window.location.origin}/a/${qr.codigo}`;
@@ -92,6 +139,9 @@ export default function QRsPage() {
                       <td><strong>{qr.formulario_nombre}</strong></td>
                       <td style={{ fontSize: 12 }}>{(qr.grados || []).join(', ') || '-'}</td>
                       <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{qr.codigo.substring(0, 16)}...</td>
+                      <td style={{ fontSize: 12 }}>
+                        {qr.fecha_inicio ? `${qr.fecha_inicio.split('T')[0]} al ${qr.fecha_cierre ? qr.fecha_cierre.split('T')[0] : '∞'}` : 'Sin vigencia'}
+                      </td>
                       <td>
                         <span className={`badge ${qr.activo ? 'badge-activo' : 'badge-inactivo'}`}>
                           {qr.activo ? 'Activo' : 'Inactivo'}
