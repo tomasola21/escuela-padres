@@ -223,8 +223,7 @@ export default function FormulariosPage() {
               <>
                 <h3 className="modal-title">Código QR</h3>
                 <div style={{ margin: '20px 0' }}>
-                  <img src={`${API_URL}/qr/imagen/${qrModal.codigo}`} alt="QR" style={{ maxWidth: 280, borderRadius: 8 }}
-                    onError={(e) => { e.target.style.display = 'none'; }} />
+                  <img crossOrigin="anonymous" src={`${API_URL}/qr/imagen/${qrModal.codigo}`} alt="QR" style={{ maxWidth: 280, borderRadius: 8 }} />
                 </div>
                 <p style={{ fontSize: 12, color: '#718096', wordBreak: 'break-all' }}>
                   {window.location.origin}/a/{qrModal.codigo}

@@ -94,9 +94,8 @@ export default function QRCustomizer({ codigo, configActual, onGuardar, guardand
 
       <div style={{ textAlign: 'center', marginBottom: 20 }}>
         <p style={{ fontSize: 13, color: '#718096', marginBottom: 8 }}>Vista previa</p>
-        <img src={previewUrl} alt="Vista previa QR"
-          style={{ maxWidth: 200, borderRadius: 8, border: '1px solid #e2e8f0' }}
-          onError={(e) => { e.target.style.display = 'none'; }} />
+        <img crossOrigin="anonymous" src={previewUrl} alt="Vista previa QR"
+          style={{ maxWidth: 200, borderRadius: 8, border: '1px solid #e2e8f0' }} />
       </div>
 
       <div className="modal-actions">

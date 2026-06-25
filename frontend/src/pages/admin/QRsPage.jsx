@@ -148,10 +148,10 @@ export default function QRsPage() {
                 <h3 className="modal-title">{qrSeleccionado.formulario_nombre}</h3>
                 <div style={{ margin: '20px 0' }}>
                   <img
+                    crossOrigin="anonymous"
                     src={`${API_URL}/qr/imagen/${qrSeleccionado.codigo}`}
                     alt="QR"
                     style={{ maxWidth: 280, borderRadius: 8 }}
-                    onError={(e) => { e.target.style.display = 'none'; }}
                   />
                 </div>
                 <p style={{ fontSize: 12, color: '#718096', wordBreak: 'break-all' }}>
