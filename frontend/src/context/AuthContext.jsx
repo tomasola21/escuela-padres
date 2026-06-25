@@ -10,15 +10,15 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token) {
       verificarToken()
         .then((data) => {
           setUsuario(data.usuario);
         })
         .catch(() => {
-          localStorage.removeItem('token');
-          localStorage.removeItem('usuario');
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('usuario');
         })
         .finally(() => setLoading(false));
     } else {
@@ -27,14 +27,14 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const loginUsuario = (usuarioData, token) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('usuario', JSON.stringify(usuarioData));
+    sessionStorage.setItem('token', token);
+    sessionStorage.setItem('usuario', JSON.stringify(usuarioData));
     setUsuario(usuarioData);
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('usuario');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('usuario');
     setUsuario(null);
   };
 
