@@ -107,6 +107,39 @@ const generarReporte = async (req, res) => {
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', 'attachment; filename=reporte_asistencias.xlsx');
       res.send(buffer);
+    } else if (formato === 'doc' || formato === 'word') {
+      const rows = asistencias.map((a, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${a.formulario || ''}</td>
+          <td>${a.evento || ''}</td>
+          <td>${a.grado || ''}</td>
+          <td>${a.seccion || ''}</td>
+          <td>${a.estudiante || ''}</td>
+          <td>${a.codigo || ''}</td>
+          <td>${a.registrado_por || ''}</td>
+          <td>${new Date(a.fecha_registro).toLocaleString('es-PE')}</td>
+        </tr>`).join('');
+
+      const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Reporte de Asistencias</title>
+<style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:40px}
+h1{text-align:center;color:#1a365d;font-size:18pt}
+.sub{text-align:center;color:#666;font-size:10pt;margin-bottom:20px}
+table{width:100%;border-collapse:collapse;margin-top:16px}
+th{background:#1a365d;color:#fff;padding:8px 6px;font-size:9pt;text-align:left}
+td{border:1px solid #ccc;padding:6px;font-size:9pt}
+tr:nth-child(even){background:#f5f7fa}
+</style></head><body>
+<h1>Reporte de Asistencias</h1>
+<p class="sub">Generado: ${new Date().toLocaleDateString('es-PE')} | Total: ${asistencias.length} registros</p>
+<table><thead><tr>
+<th>#</th><th>Taller</th><th>Evento</th><th>Grado</th><th>Sección</th><th>Estudiante</th><th>Código</th><th>Registrado por</th><th>Fecha</th>
+</tr></thead><tbody>${rows}</tbody></table></body></html>`;
+
+      res.setHeader('Content-Type', 'application/msword');
+      res.setHeader('Content-Disposition', 'attachment; filename=reporte_asistencias.doc');
+      res.send(html);
     } else {
       res.json(asistencias);
     }
