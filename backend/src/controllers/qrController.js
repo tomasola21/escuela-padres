@@ -3,7 +3,7 @@ const QRCode = require('qrcode');
 const crypto = require('crypto');
 require('dotenv').config();
 
-const CONFIG_POR_DEFECTO = { dark: '#1a365d', light: '#ffffff', width: 400 };
+const CONFIG_POR_DEFECTO = { dark: '#000000', light: '#ffffff', width: 400 };
 
 const listar = async (req, res) => {
   try {
