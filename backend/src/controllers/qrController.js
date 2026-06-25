@@ -8,9 +8,10 @@ const CONFIG_POR_DEFECTO = { dark: '#000000', light: '#ffffff', width: 400 };
 const listar = async (req, res) => {
   try {
     const [qrs] = await pool.query(
-      `SELECT q.*, f.nombre as formulario_nombre 
+      `SELECT q.*, f.nombre as formulario_nombre, f.grado_id, g.nombre as grado_nombre
        FROM qrs q 
        JOIN formularios f ON q.formulario_id = f.id 
+       LEFT JOIN grados g ON f.grado_id = g.id
        ORDER BY q.created_at DESC`
     );
     res.json(qrs);
@@ -103,7 +104,7 @@ const verificarQR = async (req, res) => {
     const { codigo } = req.params;
 
     const [qrs] = await pool.query(
-      `SELECT q.*, f.nombre as formulario_nombre, f.descripcion, f.evento, f.fecha_inicio, f.fecha_cierre, f.estado as formulario_estado
+      `      SELECT q.*, f.nombre as formulario_nombre, f.descripcion, f.evento, f.fecha_inicio, f.fecha_cierre, f.estado as formulario_estado, f.grado_id
        FROM qrs q 
        JOIN formularios f ON q.formulario_id = f.id 
        WHERE q.codigo = ?`,
@@ -139,7 +140,8 @@ const verificarQR = async (req, res) => {
         id: qr.formulario_id,
         nombre: qr.formulario_nombre,
         descripcion: qr.descripcion,
-        evento: qr.evento
+        evento: qr.evento,
+        grado_id: qr.grado_id
       }
     });
   } catch (error) {

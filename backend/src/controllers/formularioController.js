@@ -1,8 +1,10 @@
 const pool = require('../config/database');
 
+const selectConGrado = `SELECT f.*, g.nombre as grado_nombre FROM formularios f LEFT JOIN grados g ON f.grado_id = g.id`;
+
 const listar = async (req, res) => {
   try {
-    const [formularios] = await pool.query('SELECT * FROM formularios ORDER BY created_at DESC');
+    const [formularios] = await pool.query(selectConGrado + ' ORDER BY f.created_at DESC');
     res.json(formularios);
   } catch (error) {
     console.error('Error al listar formularios:', error);
@@ -13,7 +15,7 @@ const listar = async (req, res) => {
 const obtener = async (req, res) => {
   try {
     const { id } = req.params;
-    const [formularios] = await pool.query('SELECT * FROM formularios WHERE id = ?', [id]);
+    const [formularios] = await pool.query(selectConGrado + ' WHERE f.id = ?', [id]);
     if (formularios.length === 0) {
       return res.status(404).json({ mensaje: 'Formulario no encontrado.' });
     }
@@ -26,16 +28,16 @@ const obtener = async (req, res) => {
 
 const crear = async (req, res) => {
   try {
-    const { nombre, descripcion, evento, fecha_inicio, fecha_cierre, estado } = req.body;
+    const { nombre, descripcion, evento, fecha_inicio, fecha_cierre, estado, grado_id } = req.body;
     const [resultado] = await pool.query(
-      'INSERT INTO formularios (nombre, descripcion, evento, fecha_inicio, fecha_cierre, estado) VALUES (?, ?, ?, ?, ?, ?)',
-      [nombre, descripcion || null, evento || null, fecha_inicio, fecha_cierre, estado || 'activo']
+      'INSERT INTO formularios (nombre, descripcion, evento, fecha_inicio, fecha_cierre, estado, grado_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [nombre, descripcion || null, evento || null, fecha_inicio, fecha_cierre, estado || 'activo', grado_id || null]
     );
 
     const codigo = require('crypto').randomBytes(16).toString('hex');
     await pool.query('INSERT INTO qrs (formulario_id, codigo) VALUES (?, ?)', [resultado.insertId, codigo]);
 
-    const [nuevo] = await pool.query('SELECT * FROM formularios WHERE id = ?', [resultado.insertId]);
+    const [nuevo] = await pool.query(selectConGrado + ' WHERE f.id = ?', [resultado.insertId]);
     res.status(201).json(nuevo[0]);
   } catch (error) {
     console.error('Error al crear formulario:', error);
@@ -46,7 +48,7 @@ const crear = async (req, res) => {
 const actualizar = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, evento, fecha_inicio, fecha_cierre, estado } = req.body;
+    const { nombre, descripcion, evento, fecha_inicio, fecha_cierre, estado, grado_id } = req.body;
 
     const [existente] = await pool.query('SELECT * FROM formularios WHERE id = ?', [id]);
     if (existente.length === 0) {
@@ -54,11 +56,11 @@ const actualizar = async (req, res) => {
     }
 
     await pool.query(
-      'UPDATE formularios SET nombre = ?, descripcion = ?, evento = ?, fecha_inicio = ?, fecha_cierre = ?, estado = ? WHERE id = ?',
-      [nombre, descripcion || null, evento || null, fecha_inicio, fecha_cierre, estado, id]
+      'UPDATE formularios SET nombre = ?, descripcion = ?, evento = ?, fecha_inicio = ?, fecha_cierre = ?, estado = ?, grado_id = ? WHERE id = ?',
+      [nombre, descripcion || null, evento || null, fecha_inicio, fecha_cierre, estado, grado_id || null, id]
     );
 
-    const [actualizado] = await pool.query('SELECT * FROM formularios WHERE id = ?', [id]);
+    const [actualizado] = await pool.query(selectConGrado + ' WHERE f.id = ?', [id]);
     res.json(actualizado[0]);
   } catch (error) {
     console.error('Error al actualizar formulario:', error);

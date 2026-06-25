@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import {
   listarFormularios, crearFormulario, actualizarFormulario,
-  eliminarFormulario, toggleEstadoFormulario
+  eliminarFormulario, toggleEstadoFormulario, listarGrados
 } from '../../services/adminService';
 
-const initialForm = { nombre: '', descripcion: '', evento: '', fecha_inicio: '', fecha_cierre: '', estado: 'activo' };
+const initialForm = { nombre: '', descripcion: '', evento: '', fecha_inicio: '', fecha_cierre: '', estado: 'activo', grado_id: '' };
 
 export default function FormulariosPage() {
   const [formularios, setFormularios] = useState([]);
+  const [grados, setGrados] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(initialForm);
@@ -22,7 +23,10 @@ export default function FormulariosPage() {
     setCargando(false);
   };
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => {
+    cargar();
+    listarGrados().then(setGrados).catch(() => {});
+  }, []);
 
   const openCreate = () => {
     setForm(initialForm);
@@ -38,7 +42,8 @@ export default function FormulariosPage() {
       evento: f.evento || '',
       fecha_inicio: f.fecha_inicio ? f.fecha_inicio.split('T')[0] : '',
       fecha_cierre: f.fecha_cierre ? f.fecha_cierre.split('T')[0] : '',
-      estado: f.estado
+      estado: f.estado,
+      grado_id: f.grado_id || ''
     });
     setEditandoId(f.id);
     setError('');
@@ -90,8 +95,9 @@ export default function FormulariosPage() {
           <table>
             <thead>
               <tr>
-                <th>Nombre</th>
+                <th>Taller</th>
                 <th>Evento</th>
+                <th>Grado</th>
                 <th>Inicio</th>
                 <th>Cierre</th>
                 <th>Estado</th>
@@ -100,12 +106,13 @@ export default function FormulariosPage() {
             </thead>
             <tbody>
               {formularios.length === 0 ? (
-                <tr><td colSpan={6} className="empty-state">No hay formularios registrados</td></tr>
+                <tr><td colSpan={7} className="empty-state">No hay talleres registrados</td></tr>
               ) : (
                 formularios.map((f) => (
                   <tr key={f.id}>
                     <td><strong>{f.nombre}</strong></td>
                     <td>{f.evento || '-'}</td>
+                    <td>{f.grado_nombre || '-'}</td>
                     <td>{new Date(f.fecha_inicio).toLocaleDateString('es-PE')}</td>
                     <td>{new Date(f.fecha_cierre).toLocaleDateString('es-PE')}</td>
                     <td>
@@ -143,6 +150,13 @@ export default function FormulariosPage() {
               <div className="form-group">
                 <label className="form-label">Evento <span style={{ fontWeight: 400, color: '#718096' }}>(opcional)</span></label>
                 <input className="form-input" value={form.evento} onChange={(e) => setForm({ ...form, evento: e.target.value })} placeholder="Ej: Escuela de Padres, APAFA, Charla" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Grado <span style={{ fontWeight: 400, color: '#e53e3e' }}>*</span></label>
+                <select className="form-input" value={form.grado_id} onChange={(e) => setForm({ ...form, grado_id: e.target.value })} required>
+                  <option value="">Seleccionar grado</option>
+                  {grados.map((g) => <option key={g.id} value={g.id}>{g.nombre}</option>)}
+                </select>
               </div>
               <div className="form-group">
                 <label className="form-label">Descripción</label>
