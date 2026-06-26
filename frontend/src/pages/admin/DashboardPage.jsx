@@ -132,8 +132,11 @@ export default function DashboardPage() {
 
   const lineData = data ? {
     labels: data.asistenciasPorFecha?.map(f => {
-      const d = new Date(f.fecha);
-      return d.toLocaleDateString('es-PE', { day: '2-digit', month: 'short' });
+      const fechaStr = typeof f.fecha === 'string' ? f.fecha.split('T')[0] : '';
+      if (!fechaStr) return '';
+      const [y, m, d] = fechaStr.split('-').map(Number);
+      const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+      return `${d} ${meses[m - 1] || ''}`;
     }) || [],
     datasets: [{
       label: 'Asistencias',
@@ -252,7 +255,7 @@ export default function DashboardPage() {
                       <th>Sección</th>
                       <th>Taller</th>
                       <th>Evento</th>
-                      <th>Registrado por</th>
+                      <th>Quien asiste</th>
                       <th>Fecha</th>
                     </tr>
                   </thead>

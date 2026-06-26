@@ -1,6 +1,27 @@
 const pool = require('../config/database');
 const PDFDocument = require('pdfkit');
 const XLSX = require('xlsx');
+const { peruInicioDia, peruFinDia } = require('../utils/helpers');
+
+const cacheDirecciones = {};
+
+const obtenerDireccion = async (lat, lng) => {
+  if (!lat || !lng) return null;
+  const key = `${lat},${lng}`;
+  if (cacheDirecciones[key]) return cacheDirecciones[key];
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2000);
+    const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=es`, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    cacheDirecciones[key] = data.display_name || null;
+    return cacheDirecciones[key];
+  } catch {
+    return null;
+  }
+};
 
 const generarReporte = async (req, res) => {
   try {
@@ -24,8 +45,8 @@ const generarReporte = async (req, res) => {
     if (grado_id) { condiciones.push('a.grado_id = ?'); params.push(grado_id); }
     if (seccion_id) { condiciones.push('a.seccion_id = ?'); params.push(seccion_id); }
     if (estudiante_id) { condiciones.push('a.estudiante_id = ?'); params.push(estudiante_id); }
-    if (fecha_desde) { condiciones.push('a.fecha_registro >= ?'); params.push(fecha_desde); }
-    if (fecha_hasta) { condiciones.push('a.fecha_registro <= ?'); params.push(fecha_hasta + ' 23:59:59'); }
+    if (fecha_desde) { condiciones.push('a.fecha_registro >= ?'); params.push(peruInicioDia(fecha_desde)); }
+    if (fecha_hasta) { condiciones.push('a.fecha_registro <= ?'); params.push(peruFinDia(fecha_hasta)); }
 
     if (condiciones.length > 0) {
       query += ' WHERE ' + condiciones.join(' AND ');
@@ -33,6 +54,13 @@ const generarReporte = async (req, res) => {
     query += ' ORDER BY a.fecha_registro DESC';
 
     const [asistencias] = await pool.query(query, params);
+
+    const direcciones = await Promise.all(
+      asistencias.map(a => obtenerDireccion(a.latitud, a.longitud))
+    );
+    asistencias.forEach((a, i) => {
+      a.direccion = direcciones[i] || null;
+    });
 
     if (formato === 'pdf') {
       const doc = new PDFDocument({ margin: 30, size: 'A4' });
@@ -45,7 +73,7 @@ const generarReporte = async (req, res) => {
       doc.fontSize(10).font('Helvetica').text(`Generado: ${new Date().toLocaleDateString('es-PE')}`, { align: 'center' });
       doc.moveDown(1.5);
 
-      const headers = ['#', 'Estudiante', 'Código', 'Taller', 'Evento', 'Grado', 'Sección', 'Registrado por', 'Navegador', 'Fecha'];
+      const headers = ['#', 'Estudiante', 'Código', 'Taller', 'Evento', 'Grado', 'Sección', 'Quien asiste', 'Navegador', 'Fecha'];
       const widths = [18, 80, 45, 55, 40, 30, 25, 40, 40, 55];
       const tableTop = doc.y;
 
@@ -94,12 +122,11 @@ const generarReporte = async (req, res) => {
         Evento: a.evento,
         Grado: a.grado,
         Sección: a.seccion,
-        'Registrado por': a.registrado_por,
+        'Quien asiste': a.registrado_por,
         Navegador: a.navegador,
         'Fecha Registro': new Date(a.fecha_registro).toLocaleString('es-PE'),
         'Device ID': a.device_id,
-        Latitud: a.latitud,
-        Longitud: a.longitud
+        Dirección: a.direccion || 'No disponible'
       }));
 
       const wb = XLSX.utils.book_new();
@@ -138,7 +165,7 @@ tr:nth-child(even){background:#f5f7fa}
 <h1>Reporte de Asistencias</h1>
 <p class="sub">Generado: ${new Date().toLocaleDateString('es-PE')} | Total: ${asistencias.length} registros</p>
 <table><thead><tr>
-<th>#</th><th>Estudiante</th><th>Código</th><th>Taller</th><th>Evento</th><th>Grado</th><th>Sección</th><th>Registrado por</th><th>Navegador</th><th>Fecha</th>
+<th>#</th><th>Estudiante</th><th>Código</th><th>Taller</th><th>Evento</th><th>Grado</th><th>Sección</th><th>Quien asiste</th><th>Navegador</th><th>Fecha</th>
 </tr></thead><tbody>${rows}</tbody></table></body></html>`;
 
       res.setHeader('Content-Type', 'application/msword');
@@ -162,8 +189,8 @@ const dashboard = async (req, res) => {
     if (formulario_id) { where.push('a.formulario_id = ?'); params.push(formulario_id); }
     if (grado_id) { where.push('a.grado_id = ?'); params.push(grado_id); }
     if (seccion_id) { where.push('a.seccion_id = ?'); params.push(seccion_id); }
-    if (fecha_desde) { where.push('a.fecha_registro >= ?'); params.push(fecha_desde); }
-    if (fecha_hasta) { where.push('a.fecha_registro <= ?'); params.push(fecha_hasta + ' 23:59:59'); }
+    if (fecha_desde) { where.push('a.fecha_registro >= ?'); params.push(peruInicioDia(fecha_desde)); }
+    if (fecha_hasta) { where.push('a.fecha_registro <= ?'); params.push(peruFinDia(fecha_hasta)); }
     const whereStr = where.length > 0 ? ' WHERE ' + where.join(' AND ') : '';
 
     const [totalFormularios] = await pool.query('SELECT COUNT(*) as total FROM formularios');
@@ -191,7 +218,7 @@ const dashboard = async (req, res) => {
     );
 
     const [asistenciasPorFecha] = await pool.query(
-      `SELECT DATE(a.fecha_registro) as fecha, COUNT(*) as total FROM asistencias a${whereStr} GROUP BY DATE(a.fecha_registro) ORDER BY fecha ASC`,
+      `SELECT DATE(a.fecha_registro - INTERVAL 5 HOUR) as fecha, COUNT(*) as total FROM asistencias a${whereStr} GROUP BY DATE(a.fecha_registro - INTERVAL 5 HOUR) ORDER BY fecha ASC`,
       params
     );
 

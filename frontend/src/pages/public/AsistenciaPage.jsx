@@ -135,7 +135,7 @@ function FormularioAsistencia({ formulario, qrId }) {
     }
 
     if (!tipoRegistro) {
-      setErrorMsg('Por favor, selecciona quién registra la asistencia.');
+      setErrorMsg('Por favor, selecciona quién asiste.');
       return;
     }
 
@@ -242,15 +242,22 @@ function FormularioAsistencia({ formulario, qrId }) {
         </div>
 
         <div className="form-group">
-          <label className="form-label">Registrado por</label>
-          <select className="form-input" value={tipoRegistro} onChange={(e) => setTipoRegistro(e.target.value)} required>
-            <option value="">Seleccionar</option>
-            <option value="Padre">Padre</option>
-            <option value="Madre">Madre</option>
-            <option value="Ambos">Ambos</option>
-            <option value="Apoderado">Apoderado</option>
-            <option value="Otro">Otro</option>
-          </select>
+          <label className="form-label">Quien asiste</label>
+          <div className="radio-group">
+            {['Padre', 'Madre', 'Ambos', 'Apoderado', 'Otro'].map((opcion) => (
+              <label key={opcion} className="radio-label">
+                <input
+                  type="radio"
+                  name="tipoRegistro"
+                  value={opcion}
+                  checked={tipoRegistro === opcion}
+                  onChange={(e) => setTipoRegistro(e.target.value)}
+                />
+                <span className="radio-custom"></span>
+                {opcion}
+              </label>
+            ))}
+          </div>
         </div>
 
         <div className="form-group">
